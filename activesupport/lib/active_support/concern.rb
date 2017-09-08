@@ -107,22 +107,30 @@ module ActiveSupport
     end
 
     def self.extended(base) #:nodoc:
+      # Add a new instance variable with default value
       base.instance_variable_set(:@_dependencies, [])
     end
-
+    # execute after inclued
     def append_features(base)
+      # if we find that there is a @_dependencies variable
+      # it must extend Concern
+      # We put ourselves into @_dependencies 
       if base.instance_variable_defined?(:@_dependencies)
         base.instance_variable_get(:@_dependencies) << self
         return false
       else
         return false if base < self
+        # modules which all extend Concern
         @_dependencies.each { |dep| base.include(dep) }
         super
+        ## if base Class defined ClassMethods Module
+        ## We will extend it
         base.extend const_get(:ClassMethods) if const_defined?(:ClassMethods)
         base.class_eval(&@_included_block) if instance_variable_defined?(:@_included_block)
       end
     end
-
+    # method_name [( [arg [= default]]...[, * arg [, &expr ]])]
+    # This really likes Lisp
     def included(base = nil, &block)
       if base.nil?
         raise MultipleIncludedBlocks if instance_variable_defined?(:@_included_block)
@@ -134,10 +142,11 @@ module ActiveSupport
     end
 
     def class_methods(&class_methods_module_definition)
+      # Find ClassMethods module
       mod = const_defined?(:ClassMethods, false) ?
         const_get(:ClassMethods) :
         const_set(:ClassMethods, Module.new)
-
+      # define a ClassMethods Module and put methods into it
       mod.module_eval(&class_methods_module_definition)
     end
   end
