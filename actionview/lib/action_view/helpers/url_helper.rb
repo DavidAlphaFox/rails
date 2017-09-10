@@ -188,6 +188,7 @@ module ActionView
       #
       #   link_to "External link", "http://www.rubyonrails.org/", target: "_blank", rel: "nofollow"
       #   # => <a href="http://www.rubyonrails.org/" target="_blank" rel="nofollow">External link</a>
+      ## 创建link的辅助方法
       def link_to(name = nil, options = nil, html_options = nil, &block)
         html_options, options, name = options, name, block if block_given?
         options ||= {}
@@ -567,6 +568,7 @@ module ActionView
       end
 
       private
+        ## 将选项转化成html中的data属性
         def convert_options_to_data_attributes(options, html_options)
           if html_options
             html_options = html_options.stringify_keys
