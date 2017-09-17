@@ -108,13 +108,15 @@ module ActiveSupport
 
     def self.extended(base) #:nodoc:
       # Add a new instance variable with default value
+      ## 当自己被扩展的时候，给扩展自己的类添加一个全局变量
       base.instance_variable_set(:@_dependencies, [])
     end
     # execute after inclued
+    ## Ruby的机制，在included之后会调用self.included和append_features
     def append_features(base)
       # if we find that there is a @_dependencies variable
       # it must extend Concern
-      # We put ourselves into @_dependencies 
+      # We put ourselves into @_dependencies
       if base.instance_variable_defined?(:@_dependencies)
         base.instance_variable_get(:@_dependencies) << self
         return false
@@ -125,7 +127,10 @@ module ActiveSupport
         super
         ## if base Class defined ClassMethods Module
         ## We will extend it
+        ## 无论我们是否定义class_methods方法
+        ## concern发现我们定义了ClassMethod的module，都会让base扩展ClassMethods模块
         base.extend const_get(:ClassMethods) if const_defined?(:ClassMethods)
+        ## 如果我们有included_block了，会在base内直接执行这些block
         base.class_eval(&@_included_block) if instance_variable_defined?(:@_included_block)
       end
     end
@@ -143,6 +148,7 @@ module ActiveSupport
 
     def class_methods(&class_methods_module_definition)
       # Find ClassMethods module
+      # 如果定义了ClassMethods这个module就使用已经定义的
       mod = const_defined?(:ClassMethods, false) ?
         const_get(:ClassMethods) :
         const_set(:ClassMethods, Module.new)
