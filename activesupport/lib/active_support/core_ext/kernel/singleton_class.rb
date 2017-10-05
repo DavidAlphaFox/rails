@@ -36,4 +36,11 @@ end
 
 Object is a Class and Class is a Object
 Object is an instance Class but Class isn`t an instance Object
+
+Because class_eval is defined in Module class
+,class A is an instance Class and Class's superclass is Module
+,so class A won't call class_eval in Kernel module
+
+a is inherited from Object and Object mixin Kernel ,
+when a call class_eval ,it will be class_eval in Kernel module
 =end
