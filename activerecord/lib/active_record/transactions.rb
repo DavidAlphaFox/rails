@@ -8,6 +8,7 @@ module ActiveRecord
     ACTIONS = [:create, :destroy, :update]
 
     included do
+      # 引入后自动添加callbacks
       define_callbacks :commit, :rollback,
                        :before_commit,
                        :before_commit_without_transaction_enrollment,

@@ -40,10 +40,12 @@ module ActiveSupport
   # If the class has an initializer, it must accept no arguments.
   module PerThreadRegistry
     def self.extended(object)
+      ## it likes @per_thread_registry_key =  object.name.freeze
       object.instance_variable_set "@per_thread_registry_key", object.name.freeze
     end
 
     def instance
+      ## create the instance of self
       Thread.current[@per_thread_registry_key] ||= new
     end
 
@@ -53,7 +55,7 @@ module ActiveSupport
         #
         # By letting #delegate handle it, we avoid an enclosure that'll capture args.
         singleton_class.delegate name, to: :instance
-
+        # send 
         send(name, *args, &block)
       end
   end

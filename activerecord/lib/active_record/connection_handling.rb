@@ -56,7 +56,7 @@ module ActiveRecord
       resolver = ConnectionAdapters::ConnectionSpecification::Resolver.new(Base.configurations)
       spec = resolver.resolve(config).symbolize_keys
       spec[:name] = spec_name
-
+      ## 使用connection_handler来建立数据库链接
       connection_handler.establish_connection(spec)
     end
 
