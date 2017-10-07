@@ -961,7 +961,22 @@ module ActiveRecord
       # Retrieving the connection pool happens a lot, so we cache it in @owner_to_pool.
       # This makes retrieving the connection pool O(1) once the process is warm.
       # When a connection is established or removed, we invalidate the cache.
+=begin
+def fetch(key, default_value = NULL)
+  if NULL != (value = get_or_default(key, NULL))
+    value
+  elsif block_given?
+    yield key
+  elsif NULL != default_value
+    default_value
+  else
+    raise_fetch_no_key
+  end
+end
+=end
       def retrieve_connection_pool(spec_name)
+        ## if fetc spacename successfully
+        ## the block won't execute
         owner_to_pool.fetch(spec_name) do
           # Check if a connection was previously established in an ancestor process,
           # which may have been forked.
@@ -974,6 +989,7 @@ module ActiveRecord
               pool.schema_cache = ancestor_pool.schema_cache if ancestor_pool.schema_cache
             end
           else
+            ## spacename don't exists in any process
             owner_to_pool[spec_name] = nil
           end
         end
