@@ -11,6 +11,8 @@ module ActiveRecord
   #
   # See the documentation of ActiveSupport::PerThreadRegistry
   # for further details.
+  ## OK, RuntimeRegistry is create an instance and bind to Thread
+  ## and use singleton methods to access intance on the Thread
   class RuntimeRegistry # :nodoc:
     extend ActiveSupport::PerThreadRegistry
 

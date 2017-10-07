@@ -316,7 +316,8 @@ module ActiveRecord
       initialize_internals_callback
 
       assign_attributes(attributes) if attributes
-
+      ## if there is a block
+      ## yield self to the block 
       yield self if block_given?
       _run_initialize_callbacks
     end

@@ -868,6 +868,8 @@ module ActiveRecord
     class ConnectionHandler
       def initialize
         # These caches are keyed by spec.name (ConnectionSpecification#name).
+        ## outter map Process.id to a Concurrent::Map
+        ## inner map spacename in config to connection pool of database
         @owner_to_pool = Concurrent::Map.new(initial_capacity: 2) do |h, k|
           h[k] = Concurrent::Map.new(initial_capacity: 2)
         end
@@ -883,7 +885,7 @@ module ActiveRecord
         spec = resolver.spec(config)
 
         remove_connection(spec.name)
-
+        ## instrument intercept
         message_bus = ActiveSupport::Notifications.instrumenter
         payload = {
           connection_id: object_id
@@ -894,6 +896,7 @@ module ActiveRecord
         end
 
         message_bus.instrument("!connection.active_record", payload) do
+          ## map spacename in config to connection pool of database
           owner_to_pool[spec.name] = ConnectionAdapters::ConnectionPool.new(spec)
         end
 
@@ -962,6 +965,7 @@ module ActiveRecord
         owner_to_pool.fetch(spec_name) do
           # Check if a connection was previously established in an ancestor process,
           # which may have been forked.
+          ## get connection pool from map
           if ancestor_pool = pool_from_any_process_for(spec_name)
             # A connection was established in an ancestor process that must have
             # subsequently forked. We can't reuse the connection, but we can copy

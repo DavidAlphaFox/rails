@@ -155,6 +155,7 @@ class Module
   #
   # The target method must be public, otherwise it will raise +NoMethodError+.
   def delegate(*methods, to: nil, prefix: nil, allow_nil: nil)
+    # if there isn't a target we will raise ArgumentError
     unless to
       raise ArgumentError, "Delegation needs a target. Supply an options hash with a :to key as the last argument (e.g. delegate :hello, to: :greeter)."
     end
@@ -165,6 +166,8 @@ class Module
 
     method_prefix = \
       if prefix
+        ## if prefix is set and is only a bool value
+        ## we will use value of "to" as prefix
         "#{prefix == true ? to : prefix}_"
       else
         ""
@@ -172,8 +175,9 @@ class Module
 
     location = caller_locations(1, 1).first
     file, line = location.path, location.lineno
-
+    ## symbol to String
     to = to.to_s
+    ## add self. to "to" if to is a reserved
     to = "self.#{to}" if DELEGATION_RESERVED_METHOD_NAMES.include?(to)
 
     methods.map do |method|

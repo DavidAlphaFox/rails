@@ -115,6 +115,7 @@ module ActiveRecord
     end
 
     def retrieve_connection
+      ## borrow a connection from connection_handler
       connection_handler.retrieve_connection(connection_specification_name)
     end
 
