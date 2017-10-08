@@ -210,6 +210,8 @@ module ActiveRecord
     module ClassMethods
       # See the ConnectionAdapters::DatabaseStatements#transaction API docs.
       def transaction(options = {}, &block)
+        ## retrieve a connection from connection pool of database
+        ## and do transaction
         connection.transaction(options, &block)
       end
 

@@ -818,6 +818,7 @@ module ActiveSupport
           options = names.extract_options!
 
           names.each do |name|
+            ## to symbol
             name = name.to_sym
 
             set_callbacks name, CallbackChain.new(name, options)
@@ -849,6 +850,7 @@ module ActiveSupport
           end
 
           def set_callbacks(name, callbacks) # :nodoc:
+            ## update __callbacks map
             self.__callbacks = __callbacks.merge(name.to_sym => callbacks)
           end
       end

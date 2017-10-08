@@ -47,6 +47,8 @@ module ActiveSupport
     end
 
     def inherited(base)
+      ## when subclasses inherite this
+      ## store the subclass in direct_descendants[self]
       DescendantsTracker.store_inherited(self, base)
       super
     end
