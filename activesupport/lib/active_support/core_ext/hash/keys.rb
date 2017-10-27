@@ -12,6 +12,8 @@ class Hash
   #
   #  hash.transform_keys.with_index { |k, i| [k, i].join } # => {"name0"=>"Rob", "age1"=>"28"}
   def transform_keys
+    # If a block is given, it will be used to calculate the size of the enumerator
+    # without the need to iterate it 
     return enum_for(:transform_keys) { size } unless block_given?
     result = {}
     each_key do |key|

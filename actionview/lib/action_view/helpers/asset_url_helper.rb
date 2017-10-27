@@ -180,6 +180,7 @@ module ActionView
       #
       #     asset_path("foo", skip_pipeline: true, extname: ".js")     # => "/foo.js"
       #     asset_path("foo.css", skip_pipeline: true, extname: ".js") # => "/foo.css.js"
+      ## get the path of asset
       def asset_path(source, options = {})
         raise ArgumentError, "nil is not a valid asset source" if source.nil?
 
