@@ -49,6 +49,7 @@ module ActiveSupport
       #
       # Exceptions raised inside exception handlers are not propagated up.
       def rescue_from(*klasses, with: nil, &block)
+        ## 如果没有with,则检查是否有block
         unless with
           if block_given?
             with = block
@@ -58,6 +59,7 @@ module ActiveSupport
         end
 
         klasses.each do |klass|
+          ### 检查class是否是string或者可以进行class比较
           key = if klass.is_a?(Module) && klass.respond_to?(:===)
             klass.name
           elsif klass.is_a?(String)
@@ -87,14 +89,18 @@ module ActiveSupport
       # Returns the exception if it was handled and +nil+ if it was not.
       def rescue_with_handler(exception, object: self, visited_exceptions: [])
         visited_exceptions << exception
-
+        ## 找到相应异常的handler
         if handler = handler_for_rescue(exception, object: object)
+          ## 使用handler处理异常
           handler.call exception
+          ## 返回异常
           exception
         elsif exception
+          ## 遍历异常链
           if visited_exceptions.include?(exception.cause)
             nil
           else
+            ## 是否前一个异常可以使用
             rescue_with_handler(exception.cause, object: object, visited_exceptions: visited_exceptions)
           end
         end
