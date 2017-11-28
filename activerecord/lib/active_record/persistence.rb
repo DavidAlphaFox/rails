@@ -97,6 +97,7 @@ module ActiveRecord
 
     # Returns true if the record is persisted, i.e. it's not a new record and it was
     # not destroyed, otherwise returns false.
+    ## 是否已经持久化了
     def persisted?
       sync_with_transaction_state
       !(@new_record || @destroyed)
@@ -564,7 +565,9 @@ module ActiveRecord
     end
 
     def create_or_update(*args, &block)
+      ## 检查是否是只读
       _raise_readonly_record_error if readonly?
+      ## 是否是新的记录
       result = new_record? ? _create_record(&block) : _update_record(*args, &block)
       result != false
     end

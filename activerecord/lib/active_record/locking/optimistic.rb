@@ -63,7 +63,9 @@ module ActiveRecord
       private
 
         def increment_lock
+          ## 获得自己的乐观锁的字段
           lock_col = self.class.locking_column
+          ## 得到锁字段以前的值，然后加1
           previous_lock_value = send(lock_col)
           send("#{lock_col}=", previous_lock_value + 1)
         end
@@ -78,6 +80,7 @@ module ActiveRecord
         end
 
         def _update_record(attribute_names = self.attribute_names)
+          ## 如果锁没有开启，那么直接用父类来操作
           return super unless locking_enabled?
           return 0 if attribute_names.empty?
 

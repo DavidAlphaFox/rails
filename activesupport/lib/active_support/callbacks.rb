@@ -64,6 +64,7 @@ module ActiveSupport
 
     included do
       extend ActiveSupport::DescendantsTracker
+      ## 被包含的时候，自动定义__callbacks这个类变量
       class_attribute :__callbacks, instance_writer: false, default: {}
     end
 
@@ -92,9 +93,11 @@ module ActiveSupport
     # smoothly through and into the supplied block, we want as little evidence
     # as possible that we were here.
     def run_callbacks(kind)
+      ## 从__callbacks这个hash中拿出callbacks列表
       callbacks = __callbacks[kind.to_sym]
 
       if callbacks.empty?
+        ## 如果callbacks列表为空，直接尝试执行block
         yield if block_given?
       else
         env = Filters::Environment.new(self, false, nil)
@@ -822,7 +825,8 @@ module ActiveSupport
             name = name.to_sym
 
             set_callbacks name, CallbackChain.new(name, options)
-
+            ## 生成 _run_save_callbacks 这种类型的callback
+            ## 自动执行run_callbacks 函数
             module_eval <<-RUBY, __FILE__, __LINE__ + 1
               def _run_#{name}_callbacks(&block)
                 run_callbacks #{name.inspect}, &block

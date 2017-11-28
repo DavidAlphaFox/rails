@@ -62,6 +62,7 @@ module ActiveRecord
       # the locked record.
       def lock!(lock = true)
         if persisted?
+          ## 已经持久化了，那么先检查自己是否发生变化
           if changed?
             ActiveSupport::Deprecation.warn(<<-MSG.squish)
               Locking a record with unpersisted changes is deprecated and will raise an
@@ -69,6 +70,7 @@ module ActiveRecord
               discard them explicitly.
             MSG
           end
+          ## 没变化那么立刻重新加载数据
           reload(lock: lock)
         end
         self
