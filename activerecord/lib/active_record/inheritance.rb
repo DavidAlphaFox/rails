@@ -48,6 +48,7 @@ module ActiveRecord
       # and if the inheritance column is attr accessible, it initializes an
       # instance of the given subclass instead of the base class.
       def new(*args, &block)
+        ## 如果是抽象类或者是Base类，是不可以创建实例的
         if abstract_class? || self == Base
           raise NotImplementedError, "#{self} is an abstract class and cannot be instantiated."
         end

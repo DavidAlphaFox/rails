@@ -10,7 +10,7 @@ require "arel/collectors/bind"
 require "arel/collectors/composite"
 require "arel/collectors/sql_string"
 require "arel/collectors/substitute_binds"
-
+## 对所有的数据库连接方案进行抽象
 module ActiveRecord
   module ConnectionAdapters # :nodoc:
     extend ActiveSupport::Autoload

@@ -323,6 +323,7 @@ module ActiveModel
       #   person.name_short? # => NoMethodError
       def undefine_attribute_methods
         generated_attribute_methods.module_eval do
+          ## 使用Ruby的undef_method方法，逐个取消字段的定义
           instance_methods.each { |m| undef_method(m) }
         end
         attribute_method_matchers_cache.clear

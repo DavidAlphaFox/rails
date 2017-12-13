@@ -108,8 +108,11 @@ module ActiveRecord
       end
 
       # Returns an array of +Column+ objects for the table specified by +table_name+.
+      ## columns函数根据表的名字获得所有的字段和字段属性
       def columns(table_name)
         table_name = table_name.to_s
+        ## 这个是调用子类的实现，schema_statements 会被include到 AbstractAdapter中
+        ## 数据库的adpater会继承AbstractAdapter
         column_definitions(table_name).map do |field|
           new_column_from_field(table_name, field)
         end

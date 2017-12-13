@@ -71,6 +71,7 @@ module ActiveRecord
 
       # Get the columns for a table as a hash, key is the column name
       # value is the column object.
+      ## 从缓存内取出特定表的，字段定义
       def columns_hash(table_name)
         @columns_hash[table_name] ||= Hash[columns(table_name).map { |col|
           [col.name, col]

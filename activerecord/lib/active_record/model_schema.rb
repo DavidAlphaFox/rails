@@ -215,7 +215,7 @@ module ActiveRecord
       #   end
       def table_name=(value)
         value = value && value.to_s
-
+        ## 给model设置表名字的时候会自动重新定义model的字段
         if defined?(@table_name)
           return if value == @table_name
           reset_column_information if connected?
@@ -238,6 +238,7 @@ module ActiveRecord
         self.table_name = if abstract_class?
           superclass == Base ? nil : superclass.table_name
         elsif superclass.abstract_class?
+          ## 使用父类的名称或者立刻计算下当前表名字
           superclass.table_name || compute_table_name
         else
           compute_table_name
@@ -431,6 +432,7 @@ module ActiveRecord
       protected
 
         def initialize_load_schema_monitor
+          ## 创建一个锁
           @load_schema_monitor = Monitor.new
         end
 
@@ -447,6 +449,7 @@ module ActiveRecord
 
         def load_schema
           return if schema_loaded?
+          ## 如果没加载，加锁加载
           @load_schema_monitor.synchronize do
             return if defined?(@columns_hash) && @columns_hash
 

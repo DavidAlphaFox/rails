@@ -23,7 +23,9 @@ module ActiveRecord
       end
 
       def create_table
+        ## 确定migrations表的是否存在
         unless table_exists?
+          ## 不存在就创建这个表
           version_options = connection.internal_string_options_for_primary_key
 
           connection.create_table(table_name, id: false) do |t|

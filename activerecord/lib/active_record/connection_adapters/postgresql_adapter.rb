@@ -729,6 +729,7 @@ module ActiveRecord
         # Query implementation notes:
         #  - format_type includes the column size constraint, e.g. varchar(50)
         #  - ::regclass is a function that gives the id for a table name
+        ## 使用sql语句去查询某个表的定义
         def column_definitions(table_name)
           query(<<-end_sql, "SCHEMA")
               SELECT a.attname, format_type(a.atttypid, a.atttypmod),

@@ -144,6 +144,7 @@ module ActiveRecord
     end
 
     module ClassMethods # :nodoc:
+      ## 再initialize之前进行调用
       def allocate
         define_attribute_methods
         super
@@ -309,6 +310,7 @@ module ActiveRecord
     #   # Instantiates a single new object
     #   User.new(first_name: 'Jamie')
     def initialize(attributes = nil)
+      ## 在此会定义字段名称
       self.class.define_attribute_methods
       @attributes = self.class._default_attributes.deep_dup
 
