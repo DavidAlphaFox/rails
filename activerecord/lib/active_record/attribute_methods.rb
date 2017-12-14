@@ -57,7 +57,9 @@ module ActiveRecord
         # attribute methods.
         generated_attribute_methods.synchronize do
           return false if @attribute_methods_generated
+          ## base_class 是Base的直接子类或者非虚类的直接子类
           superclass.define_attribute_methods unless self == base_class
+          ## 使用类方法的attribute_names获得所有字段名称
           super(attribute_names)
           @attribute_methods_generated = true
         end

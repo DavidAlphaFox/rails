@@ -340,6 +340,7 @@ module ActiveRecord
       end
 
       def attribute_types # :nodoc:
+        ## 这个时候会要求加载schema数据
         load_schema
         @attribute_types ||= Hash.new(Type.default_value)
       end
