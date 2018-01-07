@@ -207,7 +207,7 @@ module Rails
     delegate :railtie_name, to: :class
 
     def initialize #:nodoc:
-      if self.class.abstract_railtie?
+      if self.class.abstract_railtie? ## 禁止直接创建 Rails::Railtie Rails::Engine Rails::Application
         raise "#{self.class.name} is abstract, you cannot instantiate it directly."
       end
     end

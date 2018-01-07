@@ -426,7 +426,7 @@ module Rails
     delegate :middleware, :root, :paths, to: :config
     delegate :engine_name, :isolated?, to: :class
 
-    def initialize
+    def initialize ## 初始化engine所需要的全部数据域
       @_all_autoload_paths = nil
       @_all_load_paths     = nil
       @app                 = nil

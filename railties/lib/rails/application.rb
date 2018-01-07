@@ -135,7 +135,7 @@ module Rails
       @railties          = nil
       @message_verifiers = {}
       @ran_load_hooks    = false
-
+      ## 创建executor和reload，并进行关联
       @executor          = Class.new(ActiveSupport::Executor)
       @reloader          = Class.new(ActiveSupport::Reloader)
       @reloader.executor = @executor
