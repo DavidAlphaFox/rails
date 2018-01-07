@@ -356,9 +356,11 @@ module Rails
       delegate :eager_load!, to: :instance
 
       def inherited(base)
+        ## 如果不是Rails::Railtie Rails::Engine Rails::Application
+        ## 添加加载空间
         unless base.abstract_railtie?
           Rails::Railtie::Configuration.eager_load_namespaces << base
-
+          ## 找到启动地址
           base.called_from = begin
             call_stack = caller_locations.map { |l| l.absolute_path || l.path }
 

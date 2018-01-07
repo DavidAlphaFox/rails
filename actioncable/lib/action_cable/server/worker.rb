@@ -17,6 +17,7 @@ module ActionCable
       attr_reader :executor
 
       def initialize(max_size: 5)
+        ## 创建线程池，最少1个线程，最多5个线程
         @executor = Concurrent::ThreadPoolExecutor.new(
           min_threads: 1,
           max_threads: max_size,

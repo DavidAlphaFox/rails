@@ -86,9 +86,12 @@ module Rails
     autoload :RoutesReloader,         "rails/application/routes_reloader"
 
     class << self
+      ## 自身被继承后
       def inherited(base)
-        super
+        super ## 通过super调用，触发engine的inherited方法
+        ## 将Rails.app_class 设置为自己的子类
         Rails.app_class = base
+        ## 添加lib
         add_lib_to_load_path!(find_root(base.called_from))
         ActiveSupport.run_load_hooks(:before_configuration, base)
       end
@@ -353,6 +356,8 @@ module Rails
     # group is :default
     def initialize!(group = :default) #:nodoc:
       raise "Application has been already initialized." if @initialized
+      ## Rails 进行初始化，并设置自己为初始化状态
+      ## 返回自身
       run_initializers(group, self)
       @initialized = true
       self
