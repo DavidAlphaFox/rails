@@ -120,7 +120,7 @@ module ActionDispatch
           split_options = constraints(options, path_params)
 
           constraints = scope_constraints.merge Hash[split_options[:constraints] || []]
-
+          ## 这对协议，子域名，域名，主机和端口进行针对性的过滤
           if options_constraints.is_a?(Hash)
             @defaults = Hash[options_constraints.find_all { |key, default|
               URL_OPTIONS.include?(key) && (String === default || Integer === default)
@@ -569,7 +569,7 @@ module ActionDispatch
         # [:format]
         #   Allows you to specify the default value for optional +format+
         #   segment or disable it by supplying +false+.
-        def match(path, options = nil)
+        def match(path, options = nil) ## base中match为空
         end
 
         # Mount a Rack-based application to be used within the application.
@@ -593,13 +593,14 @@ module ActionDispatch
         # which can be used to navigate to this mounted app.
         def mount(app, options = nil)
           if options
-            path = options.delete(:at)
+            path = options.delete(:at)## 取出挂载路径
           elsif Hash === app
             options = app
+            ## 自动解构到app和path
             app, path = options.find { |k, _| k.respond_to?(:call) }
             options.delete(app) if app
           end
-
+          ## 如果app不响应call,这就不是一个rack
           raise ArgumentError, "A rack application must be specified" unless app.respond_to?(:call)
           raise ArgumentError, <<-MSG.strip_heredoc unless path
             Must be called with mount point
@@ -608,15 +609,15 @@ module ActionDispatch
               or
               mount(SomeRackApp => "some_route")
           MSG
-
+          ## 判断是否是rails_app,app的类型是Class，并且是Rails::Railtie的子类
           rails_app = rails_app? app
-          options[:as] ||= app_name(app, rails_app)
-
+          options[:as] ||= app_name(app, rails_app)## 设置名称
+          ## 设置目标
           target_as       = name_for_action(options[:as], path)
           options[:via] ||= :all
-
+          ## 添加match规则
           match(path, options.merge(to: app, anchor: false, format: false))
-
+          ## 如果是rails app就需要在被挂载的app上进行一些操作
           define_generate_prefix(app, target_as) if rails_app
           self
         end
@@ -650,9 +651,9 @@ module ActionDispatch
               ActiveSupport::Inflector.underscore(class_name).tr("/", "_")
             end
           end
-
+          ## 此处使用的是Mapper的@set
           def define_generate_prefix(app, name)
-            _route = @set.named_routes.get name
+            _route = @set.named_routes.get name ## 找到对应名字的路由
             _routes = @set
 
             script_namer = ->(options) do
@@ -669,10 +670,10 @@ module ActionDispatch
             end
 
             app.routes.define_mounted_helper(name, script_namer)
-
+            ## 让目标app关闭掉优化的路径生成
             app.routes.extend Module.new {
               def optimize_routes_generation?; false; end
-
+              ## 重新定义find_script_name
               define_method :find_script_name do |options|
                 if options.key? :script_name
                   super(options)
@@ -683,7 +684,7 @@ module ActionDispatch
             }
           end
       end
-
+      ## 封装所有的HTTP操作到match上
       module HttpHelpers
         # Define a route that only recognizes HTTP GET.
         # For supported arguments, see match[rdoc-ref:Base#match]
@@ -820,17 +821,17 @@ module ActionDispatch
         #     resources :posts
         #   end
         def scope(*args)
-          options = args.extract_options!.dup
+          options = args.extract_options!.dup ##复制参数
           scope = {}
-
+          ## 设置路径
           options[:path] = args.flatten.join("/") if args.any?
           options[:constraints] ||= {}
-
+          ## 如果是非嵌套的scope，需要设置shallow
           unless nested_scope?
             options[:shallow_path] ||= options[:path] if options.key?(:path)
             options[:shallow_prefix] ||= options[:as] if options.key?(:as)
           end
-
+          ## 对协议，子域名，域名，主机和端口进行针对性的过滤
           if options[:constraints].is_a?(Hash)
             defaults = options[:constraints].select do |k, v|
               URL_OPTIONS.include?(k) && (v.is_a?(String) || v.is_a?(Integer))
@@ -845,11 +846,11 @@ module ActionDispatch
             scope[:action_options] = { only: options.delete(:only),
                                        except: options.delete(:except) }
           end
-
+          ## 只有使用match的时候才可以使用:anchor
           if options.key? :anchor
             raise ArgumentError, "anchor is ignored unless passed to `match`"
           end
-
+          ## 使用Mapper中的scope
           @scope.options.each do |option|
             if option == :blocks
               value = block
@@ -858,16 +859,17 @@ module ActionDispatch
             else
               value = options.delete(option) { POISON }
             end
-
+            ## 只要值不是“毒药值”，就使用merge函数族进行merge
             unless POISON == value
               scope[option] = send("merge_#{option}_scope", @scope[option], value)
             end
           end
-
+          ## 更新当前scope
           @scope = @scope.new scope
           yield
           self
         ensure
+          ## 确保@scope恢复
           @scope = @scope.parent
         end
 
@@ -2148,7 +2150,12 @@ module ActionDispatch
           end
         end
       end
-
+      ## Scope 用来保存每一个子作用域内的设置，然后传入后面的block中
+      ## 会产生新scope的指令包括: @scope = @scope.new
+      ## 新@scope会将老的@scope作为parent
+      ## scope，resource，resources,nested,root,new,collection,member
+      ## 当离开对应的block后，@scope变量恢复到parent
+      ## 通过这样完成了设置的作用域的连续性
       class Scope # :nodoc:
         OPTIONS = [:path, :shallow_path, :as, :shallow_prefix, :module,
                    :controller, :action, :path_names, :constraints,
@@ -2160,7 +2167,7 @@ module ActionDispatch
         attr_reader :parent, :scope_level
 
         def initialize(hash, parent = NULL, scope_level = nil)
-          @hash = hash
+          @hash = hash ## 路由hash表
           @parent = parent
           @scope_level = scope_level
         end
@@ -2209,7 +2216,7 @@ module ActionDispatch
         def options
           OPTIONS
         end
-
+        ## 实例的new方法，会把自己设置为父scope
         def new(hash)
           self.class.new hash, self, scope_level
         end
@@ -2237,10 +2244,10 @@ module ActionDispatch
 
         NULL = Scope.new(nil, nil)
       end
-
+      ### Mapper的initialize，Rails的路由映射核心是Scope
       def initialize(set) #:nodoc:
         @set = set
-        @scope = Scope.new(path_names: @set.resources_path_names)
+        @scope = Scope.new(path_names: @set.resources_path_names) ## 创建Scope
         @concerns = {}
       end
 

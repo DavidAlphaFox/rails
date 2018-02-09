@@ -534,6 +534,7 @@ module Rails
     # Defines the routes for this engine. If a block is given to
     # routes, it is appended to the engine.
     def routes
+      ## routes 是 RouteSet是实体化，是很多endpoint的集合
       @routes ||= ActionDispatch::Routing::RouteSet.new_with_config(config)
       @routes.append(&Proc.new) if block_given?
       @routes

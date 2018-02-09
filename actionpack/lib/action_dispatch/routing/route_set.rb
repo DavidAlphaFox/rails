@@ -26,7 +26,7 @@ module ActionDispatch
         end
 
         def dispatcher?; true; end
-
+        ## 将请求交给控制器进行处理
         def serve(req)
           params     = req.path_parameters
           controller = controller req
@@ -47,7 +47,7 @@ module ActionDispatch
         rescue NameError => e
           raise ActionController::RoutingError, e.message, e.backtrace
         end
-
+        ## 进行请求派发
         def dispatch(controller, action, req, res)
           controller.dispatch(action, req, res)
         end
@@ -338,19 +338,19 @@ module ActionDispatch
       def self.default_resources_path_names
         { new: "new", edit: "edit" }
       end
-
+      ## 默认构建RouterSet
       def self.new_with_config(config)
         route_set_config = DEFAULT_CONFIG
-
+        ## 是否使用相对relative_url_root
         # engines apparently don't have this set
         if config.respond_to? :relative_url_root
           route_set_config.relative_url_root = config.relative_url_root
         end
-
+        ## 是否纯API
         if config.respond_to? :api_only
           route_set_config.api_only = config.api_only
         end
-
+        ## 创建RouterSet
         new route_set_config
       end
 
@@ -359,7 +359,7 @@ module ActionDispatch
       DEFAULT_CONFIG = Config.new(nil, false)
 
       def initialize(config = DEFAULT_CONFIG)
-        self.named_routes = NamedRouteCollection.new
+        self.named_routes = NamedRouteCollection.new ## 创建命名路由集合
         self.resources_path_names = self.class.default_resources_path_names
         self.default_url_options = {}
 
@@ -415,10 +415,12 @@ module ActionDispatch
       end
 
       def eval_block(block)
-        mapper = Mapper.new(self)
+        mapper = Mapper.new(self) ##创建mapper
         if default_scope
           mapper.with_default_scope(default_scope, &block)
         else
+          ## 在mapper的实例中执行block
+          ## 这样可以使用Mapper中的函数来定义路由
           mapper.instance_exec(&block)
         end
       end

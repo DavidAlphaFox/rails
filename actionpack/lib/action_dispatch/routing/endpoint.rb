@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-
+## 抽象定义Endpoint
 module ActionDispatch
   module Routing
     class Endpoint # :nodoc:
