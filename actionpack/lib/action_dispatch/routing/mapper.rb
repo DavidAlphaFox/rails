@@ -1882,7 +1882,7 @@ module ActionDispatch
           def using_match_shorthand?(path)
             path =~ %r{^/?[-\w]+/[-\w/]+$}
           end
-
+          ## 路由展开并根据情况添加到RouteSet中
           def decomposed_match(path, controller, options, _path, to, via, formatted, anchor, options_constraints)
             if on = options.delete(:on)
               send(on) { decomposed_match(path, controller, options, _path, to, via, formatted, anchor, options_constraints) }
