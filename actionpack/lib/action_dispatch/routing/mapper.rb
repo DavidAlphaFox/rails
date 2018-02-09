@@ -1568,7 +1568,8 @@ module ActionDispatch
         #   match 'path' => 'controller#action', via: patch
         #   match 'path', to: 'controller#action', via: :post
         #   match 'path', 'otherpath', on: :member, via: :get
-        def match(path, *rest, &block)
+        def match(path, *rest, &block) ## 定义在Module Resources
+          ## Rails 将路由视为资源
           if rest.empty? && Hash === path
             options  = path
             path, to = options.find { |name, _value| name.is_a?(String) }
