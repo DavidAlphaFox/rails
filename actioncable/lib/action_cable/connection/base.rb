@@ -207,7 +207,7 @@ module ActionCable
             false
           end
         end
-
+        ## 响应成功请求
         def respond_to_successful_request
           logger.info successful_request_message
           websocket.rack_response

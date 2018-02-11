@@ -84,37 +84,37 @@ module ActionCable
 
         def run
           loop do
-            if @stopping
+            if @stopping ## 要求停止，使用close
               @nio.close
               break
             end
 
-            until @todo.empty?
+            until @todo.empty? ## 任务优先
               @todo.pop(true).call
             end
 
-            next unless monitors = @nio.select
+            next unless monitors = @nio.select ## 得到所有的IO任务
 
             monitors.each do |monitor|
-              io = monitor.io
-              stream = monitor.value
+              io = monitor.io ## 的到Socket
+              stream = monitor.value ## 得到附带值
 
               begin
-                if monitor.writable?
+                if monitor.writable? ## 可写时候，清空写Buffer
                   if stream.flush_write_buffer
                     monitor.interests = :r
                   end
-                  next unless monitor.readable?
+                  next unless monitor.readable? ## 如果不可读，直接处理下一个
                 end
 
-                incoming = io.read_nonblock(4096, exception: false)
+                incoming = io.read_nonblock(4096, exception: false) ## 非阻塞读取
                 case incoming
                 when :wait_readable
                   next
                 when nil
                   stream.close
                 else
-                  stream.receive incoming
+                  stream.receive incoming ## callback stream 进行处理
                 end
               rescue
                 # We expect one of EOFError or Errno::ECONNRESET in
