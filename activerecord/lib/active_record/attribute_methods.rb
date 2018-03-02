@@ -48,19 +48,21 @@ module ActiveRecord
 
         super
       end
-
+      ### 此处是类方法，不是实例方法
       # Generates all the attribute related methods for columns in the database
       # accessors, mutators and query methods.
       def define_attribute_methods # :nodoc:
         return false if @attribute_methods_generated
         # Use a mutex; we don't want two threads simultaneously trying to define
         # attribute methods.
+        ## 所有的子类define_attribute_methods都会是这个函数
+        ## 所以其中的super并不是子类的直接父类中define_attribute_methods
         generated_attribute_methods.synchronize do
           return false if @attribute_methods_generated
           ## base_class 是Base的直接子类或者非虚类的直接子类
           superclass.define_attribute_methods unless self == base_class
-          ## 使用类方法的attribute_names获得所有字段名称
-          super(attribute_names)
+          ## 使用类方法的attribute_names获得所有字段名称，使用ActiveModel中的define_attribute_methods定义字段
+          super(attribute_names) ## super是指自己继承的父类或include的module中的方法
           @attribute_methods_generated = true
         end
       end

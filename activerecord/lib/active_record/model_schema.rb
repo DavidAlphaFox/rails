@@ -235,7 +235,7 @@ module ActiveRecord
 
       # Computes the table name, (re)sets it internally, and returns it.
       def reset_table_name #:nodoc:
-        self.table_name = if abstract_class?
+        self.table_name = if abstract_class? ## 如果是抽象类，父类不是Base的情况下用父类的表名字
           superclass == Base ? nil : superclass.table_name
         elsif superclass.abstract_class?
           ## 使用父类的名称或者立刻计算下当前表名字
@@ -358,7 +358,7 @@ module ActiveRecord
       # by ActiveModel::Type::Value (though the object itself may not subclass
       # it).
       #
-      # +attr_name+ The name of the attribute to retrieve the type for. Must be
+      # +attr_name+ Tcompute_table_namehe name of the attribute to retrieve the type for. Must be
       # a string
       def type_for_attribute(attr_name, &block)
         if block
@@ -374,7 +374,7 @@ module ActiveRecord
         load_schema
         @column_defaults ||= _default_attributes.to_hash
       end
-
+      ## 获取所有的属性，如果没有就是空集合
       def _default_attributes # :nodoc:
         @default_attributes ||= AttributeSet.new({})
       end
