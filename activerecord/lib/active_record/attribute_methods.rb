@@ -265,7 +265,7 @@ module ActiveRecord
     end
 
     # Returns a hash of all the attributes with their names as keys and the values of the attributes as values.
-    #
+    #  定义attributes方法，可以使用ActiveModel的as_json
     #   class Person < ActiveRecord::Base
     #   end
     #
@@ -275,7 +275,7 @@ module ActiveRecord
     def attributes
       @attributes.to_hash
     end
-
+  
     # Returns an <tt>#inspect</tt>-like string for the value of the
     # attribute +attr_name+. String attributes are truncated up to 50
     # characters, Date and Time attributes are returned in the
