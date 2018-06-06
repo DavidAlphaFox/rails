@@ -83,7 +83,7 @@ module ActionCable
         config.connection_class.call.identifiers
       end
     end
-
+    ## 此处触发engine中的initializer中的hook
     ActiveSupport.run_load_hooks(:action_cable, Base.config)
   end
 end

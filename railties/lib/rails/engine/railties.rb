@@ -6,7 +6,7 @@ module Rails
       include Enumerable
       attr_reader :_all
 
-      def initialize
+      def initialize ## rails 通过这里加载每一个engine
         @_all ||= ::Rails::Railtie.subclasses.map(&:instance) +
           ::Rails::Engine.subclasses.map(&:instance)
       end

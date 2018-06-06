@@ -24,7 +24,7 @@ module ActiveSupport
   #   ActiveSupport.run_load_hooks(:active_record, ActiveRecord::Base)
   module LazyLoadHooks
     def self.extended(base) # :nodoc:
-      base.class_eval do
+      base.class_eval do # add data struct in base
         @load_hooks = Hash.new { |h, k| h[k] = [] }
         @loaded     = Hash.new { |h, k| h[k] = [] }
         @run_once   = Hash.new { |h, k| h[k] = [] }
