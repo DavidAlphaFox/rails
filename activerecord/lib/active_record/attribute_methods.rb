@@ -163,6 +163,7 @@ module ActiveRecord
       #   # => ["id", "created_at", "updated_at", "name", "age"]
       def attribute_names
         @attribute_names ||= if !abstract_class? && table_exists?
+          ## 此时会去model_schema中寻找这个方法
           attribute_types.keys
         else
           []

@@ -75,7 +75,7 @@ module ActiveSupport
   autoload :TestCase
 
   def self.eager_load!
-    super
+    super # 这个super是ActiveSupport::Autoload
 
     NumberHelper.eager_load!
   end
