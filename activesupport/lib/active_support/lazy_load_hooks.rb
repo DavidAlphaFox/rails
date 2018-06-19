@@ -66,9 +66,9 @@ module ActiveSupport
       def execute_hook(name, base, options, block)
         with_execution_control(name, block, options[:run_once]) do
           if options[:yield]
-            block.call(base)
+            block.call(base) # 如果是yield方式，就将base当作一个参数传入其中
           else
-            base.instance_eval(&block)
+            base.instance_eval(&block)# 否则，在base这个实例当中执行该block
           end
         end
       end

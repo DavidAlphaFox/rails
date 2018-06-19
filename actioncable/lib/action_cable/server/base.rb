@@ -84,6 +84,7 @@ module ActionCable
       end
     end
     ## 此处触发engine中的initializer中的hook
+    ## 所有的initializer都会在Base.config这个实例当中运行，默认是ActionCable::Server::Configuration.new
     ActiveSupport.run_load_hooks(:action_cable, Base.config)
   end
 end
