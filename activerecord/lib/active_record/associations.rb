@@ -1679,6 +1679,7 @@ module ActiveRecord
         #   belongs_to :user, optional: true
         #   belongs_to :account, default: -> { company.account }
         def belongs_to(name, scope = nil, options = {})
+          # 用buidler 创建一个belongs_to的reflection
           reflection = Builder::BelongsTo.build(self, name, scope, options)
           Reflection.add_reflection self, name, reflection
         end

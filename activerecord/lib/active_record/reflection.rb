@@ -34,8 +34,8 @@ module ActiveRecord
     end
 
     def self.add_reflection(ar, name, reflection)
-      ar.clear_reflections_cache
-      ar._reflections = ar._reflections.merge(name.to_s => reflection)
+      ar.clear_reflections_cache # 清空缓存
+      ar._reflections = ar._reflections.merge(name.to_s => reflection) # 将新的reflection加入到当前ar中
     end
 
     def self.add_aggregate_reflection(ar, name, reflection)
