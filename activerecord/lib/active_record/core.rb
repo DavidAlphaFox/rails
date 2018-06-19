@@ -225,12 +225,12 @@ module ActiveRecord
       def initialize_generated_modules # :nodoc:
         generated_association_methods
       end
-
+      ## 创建关联对象的方法
       def generated_association_methods
         @generated_association_methods ||= begin
-          mod = const_set(:GeneratedAssociationMethods, Module.new)
-          private_constant :GeneratedAssociationMethods
-          include mod
+          mod = const_set(:GeneratedAssociationMethods, Module.new)#创建一个新的mod
+          private_constant :GeneratedAssociationMethods #将该对象私有化
+          include mod #将该对象包含到当前的Class当中
 
           mod
         end

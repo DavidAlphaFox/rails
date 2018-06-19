@@ -22,7 +22,7 @@ module ActiveRecord
       attr_accessor :inversed
 
       delegate :options, to: :reflection
-
+      # owner是当前的model，reflection是从ActiveRecord::Reflection::AbstractReflection上继承下来的类的实例
       def initialize(owner, reflection)
         reflection.check_validity!
 
@@ -95,7 +95,7 @@ module ActiveRecord
       def reset_scope
         @association_scope = nil
       end
-
+      # 进行反向关联
       # Set the inverse association, if possible
       def set_inverse_instance(record)
         if invertible_for?(record)
@@ -118,7 +118,7 @@ module ActiveRecord
       # Returns the class of the target. belongs_to polymorphic overrides this to look at the
       # polymorphic_type field on the owner.
       def klass
-        reflection.klass
+        reflection.klass ##从反射（reflection）当中拿到关联model的类名
       end
 
       # Can be overridden (i.e. in ThroughAssociation) to merge in other scopes (i.e. the

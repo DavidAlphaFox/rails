@@ -13,7 +13,7 @@ module ActiveRecord
       class_attribute :_reflections, instance_writer: false, default: {}
       class_attribute :aggregate_reflections, instance_writer: false, default: {}
     end
-
+    #macro是关系名原子（如:belongs_to)，name是关联model，ar是自己的model
     def self.create(macro, name, scope, options, ar)
       klass = \
         case macro
@@ -337,7 +337,7 @@ module ActiveRecord
       #
       # <tt>composed_of :balance, class_name: 'Money'</tt> returns <tt>{ class_name: "Money" }</tt>
       # <tt>has_many :clients</tt> returns <tt>{}</tt>
-      attr_reader :options
+      attr_reader :options ##让@options直接变成一个reader
 
       attr_reader :active_record
 
@@ -397,7 +397,7 @@ module ActiveRecord
       def scope_for(relation, owner = nil)
         relation.instance_exec(owner, &scope) || relation
       end
-
+      ## 如果在options中找不到class_name这个配置，直接使用belongs_to: name中的name进行首字母大写来作类名下划线后面的字母也会自动大写
       private
         def derive_class_name
           name.to_s.camelize
@@ -619,7 +619,7 @@ module ActiveRecord
           if can_find_inverse_of_automatically?(self)
             inverse_name = ActiveSupport::Inflector.underscore(options[:as] || active_record.name.demodulize).to_sym
 
-            begin
+            begin ## 从关联model中找到自己名字的reflection，然后进行反向关联
               reflection = klass._reflect_on_association(inverse_name)
             rescue NameError
               # Give up: we couldn't compute the klass type so we won't be able

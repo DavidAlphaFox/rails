@@ -352,7 +352,7 @@ module ActionView
       # NOTE: Only the option tags are returned, you have to wrap this call in a regular HTML select tag.
       def options_for_select(container, selected = nil)
         return container if String === container
-
+        # 找出被选中的和被禁用的
         selected, disabled = extract_selected_and_disabled(selected).map do |r|
           Array(r).map(&:to_s)
         end
@@ -360,7 +360,7 @@ module ActionView
         container.map do |element|
           html_attributes = option_html_attributes(element)
           text, value = option_text_and_value(element).map(&:to_s)
-
+          #生成select选项
           html_attributes[:selected] ||= option_value_selected?(value, selected)
           html_attributes[:disabled] ||= disabled && option_value_selected?(value, disabled)
           html_attributes[:value] = value
@@ -781,6 +781,7 @@ module ActionView
             [selected, nil]
           else
             selected = Array.wrap(selected)
+            #选出hash数据
             options = selected.extract_options!.symbolize_keys
             selected_items = options.fetch(:selected, selected)
             [selected_items, options[:disabled]]

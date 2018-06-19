@@ -104,7 +104,7 @@ module ActiveRecord
         value
       end
     end
-
+    # 存在竞争态，不能保证验证过就一定不存在
     module ClassMethods
       # Validates whether the value of the specified attributes are unique
       # across the system. Useful for making sure that only one user

@@ -255,16 +255,16 @@ module ActiveRecord
       super
       Preloader.eager_load!
     end
-
+    # 获得关联对象关系实例的方式，其中association就是关联对象关系实例（例如Associations::HasManyAssociation）
     # Returns the association instance for the given name, instantiating it if it doesn't already exist
     def association(name) #:nodoc:
-      association = association_instance_get(name)
+      association = association_instance_get(name) #从association_cache中得到对象
 
-      if association.nil?
+      if association.nil? #如果association对象为nil，从自身class对象的_reflect_on_association上获得reflection
         unless reflection = self.class._reflect_on_association(name)
           raise AssociationNotFoundError.new(self, name)
         end
-        association = reflection.association_class.new(self, reflection)
+        association = reflection.association_class.new(self, reflection)# 通过reflection建立一个新的association
         association_instance_set(name, association)
       end
 
