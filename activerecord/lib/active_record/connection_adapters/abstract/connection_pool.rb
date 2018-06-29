@@ -879,7 +879,7 @@ module ActiveRecord
         owner_to_pool.values.compact
       end
       alias :connection_pools :connection_pool_list
-
+      ## 默认的handler，使用此处来完成连接的建立
       def establish_connection(config)
         resolver = ConnectionSpecification::Resolver.new(Base.configurations)
         spec = resolver.spec(config)
