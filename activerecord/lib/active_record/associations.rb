@@ -1859,7 +1859,7 @@ module ActiveRecord
           Builder::HasMany.define_callbacks self, middle_reflection
           Reflection.add_reflection self, middle_reflection.name, middle_reflection
           middle_reflection.parent_reflection = habtm_reflection
-
+          # 添加destroy_associations方法，自动删除关系
           include Module.new {
             class_eval <<-RUBY, __FILE__, __LINE__ + 1
               def destroy_associations
