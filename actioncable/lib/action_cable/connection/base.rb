@@ -195,7 +195,7 @@ module ActionCable
         def decode(websocket_message)
           @coder.decode websocket_message
         end
-
+      # 在ActionCable中返回UnauthorizedError，会直接让ActionCable关闭连接
         def handle_open
           @protocol = websocket.protocol
           connect if respond_to?(:connect)
