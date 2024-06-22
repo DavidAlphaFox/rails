@@ -52,7 +52,7 @@ module ActionCable
         @driver.on(:message) { |e| receive_message(e.data) }
         @driver.on(:close)   { |e| begin_close(e.reason, e.code) }
         @driver.on(:error)   { |e| emit_error(e.message) }
-
+        ## 将自己注册到event_loop上
         @stream = ActionCable::Connection::Stream.new(@event_loop, self)
       end
 

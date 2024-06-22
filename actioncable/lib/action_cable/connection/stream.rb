@@ -68,7 +68,7 @@ module ActionCable
       rescue EOFError, Errno::ECONNRESET
         @socket_object.client_gone
       end
-
+      # 清空所有的写缓存
       def flush_write_buffer
         @write_lock.synchronize do
           loop do

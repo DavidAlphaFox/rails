@@ -3,7 +3,7 @@
 # :markup: markdown
 
 require "nio"
-
+#ActionCable使用了NIO
 module ActionCable
   module Connection
     class StreamEventLoop
@@ -12,7 +12,7 @@ module ActionCable
         @map = {}
         @stopping = false
         @todo = Queue.new
-
+        # 使用全局的锁去保护NIO
         @spawn_mutex = Mutex.new
       end
 
@@ -61,18 +61,18 @@ module ActionCable
       private
         def spawn
           return if @thread && @thread.status
-
+          # 两次检查，直接返回线程状态
           @spawn_mutex.synchronize do
             return if @thread && @thread.status
-
+            # 创建NIO
             @nio ||= NIO::Selector.new
-
+            # 创建线程池
             @executor ||= Concurrent::ThreadPoolExecutor.new(
               min_threads: 1,
               max_threads: 10,
               max_queue: 0,
             )
-
+            # NIO自己的线程
             @thread = Thread.new { run }
 
             return true
@@ -89,11 +89,11 @@ module ActionCable
               @nio.close
               break
             end
-
+            # 处理待完成的任务
             until @todo.empty?
               @todo.pop(true).call
             end
-
+            # 从NIO中选出任务，如果任务为空，立刻进行下一次循环
             next unless monitors = @nio.select
 
             monitors.each do |monitor|
