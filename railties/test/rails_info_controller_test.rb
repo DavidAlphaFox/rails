@@ -2,17 +2,13 @@
 
 require "abstract_unit"
 
-module ActionController
-  class Base
-    include ActionController::Testing
-  end
-end
-
 class InfoControllerTest < ActionController::TestCase
+  include ActiveSupport::Testing::Isolation
   tests Rails::InfoController
-  Rails.application.config.secret_key_base = "b3c631c314c0bbca50c1b2843150fe33"
 
   def setup
+    ActionController::Base.include ActionController::Testing
+
     Rails.application.routes.draw do
       namespace :test do
         get :nested_route, to: "test#show"
@@ -51,8 +47,12 @@ class InfoControllerTest < ActionController::TestCase
   end
 
   test "info controller allows requests when all requests are considered local" do
+    @request.env["REMOTE_ADDR"] = "example.org"
+    Rails.application.config.consider_all_requests_local = true
     get :properties
     assert_response :success
+  ensure
+    Rails.application.config.consider_all_requests_local = false
   end
 
   test "info controller allows local requests" do
@@ -68,6 +68,26 @@ class InfoControllerTest < ActionController::TestCase
   test "info controller renders with routes" do
     get :routes
     assert_response :success
+  end
+
+  test "info controller routes shows source location" do
+    Rails.env = "development"
+    Rails.configuration.eager_load = false
+    Rails.application.initialize!
+    Rails.application.routes.draw do
+      namespace :test do
+        get :nested_route, to: "test#show"
+      end
+      get "/rails/info/routes" => "rails/info#routes"
+    end
+
+    get :routes
+
+    assert_select("table tr") do
+      assert_select("td", text: "test_nested_route_path")
+      assert_select("td", text: "test/test#show")
+      assert_select("td", text: "#{__FILE__}:79")
+    end
   end
 
   test "info controller search returns exact matches for route names" do

@@ -491,9 +491,7 @@ class TransactionTest < ActiveRecord::TestCase
       end
     end
 
-    assert_not_deprecated(ActiveRecord.deprecator) do
-      transaction_with_shallow_return
-    end
+    transaction_with_shallow_return
     assert committed
 
     assert_predicate Topic.find(1), :approved?, "First should have been approved"
@@ -1384,6 +1382,12 @@ class TransactionTest < ActiveRecord::TestCase
       rescue
       ensure
         Topic.reset_column_information
+      end
+    end
+
+    def test_sqlite_default_transaction_mode_is_immediate
+      assert_queries_match(/BEGIN IMMEDIATE TRANSACTION/i, include_schema: false) do
+        Topic.transaction { Topic.lease_connection.materialize_transactions }
       end
     end
   end

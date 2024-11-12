@@ -596,7 +596,7 @@ module ActiveRecord
 
       def test_tables_logs_name
         sql = <<~SQL
-          SELECT name FROM sqlite_master WHERE name <> 'sqlite_sequence' AND type IN ('table')
+          SELECT name FROM pragma_table_list WHERE schema <> 'temp' AND name NOT IN ('sqlite_sequence', 'sqlite_schema') AND type IN ('table')
         SQL
         @conn.connect!
         assert_logged [[sql.squish, "SCHEMA", []]] do
@@ -607,7 +607,7 @@ module ActiveRecord
       def test_table_exists_logs_name
         with_example_table do
           sql = <<~SQL
-            SELECT name FROM sqlite_master WHERE name <> 'sqlite_sequence' AND name = 'ex' AND type IN ('table')
+            SELECT name FROM pragma_table_list WHERE schema <> 'temp' AND name NOT IN ('sqlite_sequence', 'sqlite_schema') AND name = 'ex' AND type IN ('table')
           SQL
           assert_logged [[sql.squish, "SCHEMA", []]] do
             assert @conn.table_exists?("ex")
@@ -695,6 +695,15 @@ module ActiveRecord
           @conn.add_index "ex", %w{ id number }, name: "fun"
           index = @conn.indexes("ex").find { |idx| idx.name == "fun" }
           assert_equal %w{ id number }.sort, index.columns.sort
+        end
+      end
+
+      def test_partial_index_with_comment
+        with_example_table do
+          @conn.add_index "ex", :id, name: "fun", where: "number > 0 /*tag:test*/"
+          index = @conn.indexes("ex").find { |idx| idx.name == "fun" }
+          assert_equal ["id"], index.columns
+          assert_equal "number > 0", index.where
         end
       end
 
@@ -926,14 +935,12 @@ module ActiveRecord
         statement = ::SQLite3::Statement.new(db,
                                            "CREATE TABLE statement_test (number integer not null)")
         statement.stub(:step, -> { raise ::SQLite3::BusyException.new("busy") }) do
-          assert_called(statement, :columns, returns: []) do
-            assert_called(statement, :close) do
-              ::SQLite3::Statement.stub(:new, statement) do
-                error = assert_raises ActiveRecord::StatementInvalid do
-                  @conn.exec_query "select * from statement_test"
-                end
-                assert_equal @conn.pool, error.connection_pool
+          assert_called(statement, :close) do
+            ::SQLite3::Statement.stub(:new, statement) do
+              error = assert_raises ActiveRecord::StatementTimeout do
+                @conn.exec_query "select * from statement_test"
               end
+              assert_equal @conn.pool, error.connection_pool
             end
           end
         end

@@ -1,11 +1,23 @@
-*   Add a `filter` option to `in_order_of` to prioritize certain values in the sorting without filtering the results
-    by these values.
+*   `ActiveSupport::CurrentAttributes#attributes` now will return a new hash object on each call.
 
-    *Igor Depolli*
+    Previously, the same hash object was returned each time that method was called.
 
-*   Improve error message when using `assert_difference` or `assert_changes` with a
-    proc by printing the proc's source code (MRI only).
+    *fatkodima*
 
-    *Richard Böhme*, *Jean Boussier*
+*   `ActiveSupport::JSON.encode` supports CIDR notation.
 
-Please check [7-2-stable](https://github.com/rails/rails/blob/7-2-stable/activesupport/CHANGELOG.md) for previous changes.
+    Previously:
+
+    ```ruby
+    ActiveSupport::JSON.encode(IPAddr.new("172.16.0.0/24")) # => "\"172.16.0.0\""
+    ```
+
+    After this change:
+
+    ```ruby
+    ActiveSupport::JSON.encode(IPAddr.new("172.16.0.0/24")) # => "\"172.16.0.0/24\""
+    ```
+
+    *Taketo Takashima*
+
+Please check [8-0-stable](https://github.com/rails/rails/blob/8-0-stable/activesupport/CHANGELOG.md) for previous changes.

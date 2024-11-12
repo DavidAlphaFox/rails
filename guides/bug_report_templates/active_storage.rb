@@ -9,7 +9,7 @@ gemfile(true) do
   # If you want to test against edge Rails replace the previous line with this:
   # gem "rails", github: "rails/rails", branch: "main"
 
-  gem "sqlite3", "~> 1.4"
+  gem "sqlite3"
 end
 
 require "active_record/railtie"
@@ -55,7 +55,7 @@ end
 
 require "minitest/autorun"
 
-class BugTest < Minitest::Test
+class BugTest < ActiveSupport::TestCase
   def test_upload_and_download
     user = User.create!(
       profile: {
