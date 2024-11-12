@@ -99,7 +99,7 @@ module ActiveModel
         else
           include_root_in_json
         end
-
+        ##ActiveModel::Serialization 中的方法
         hash = serializable_hash(options).as_json
         if root
           root = model_name.element if root == true
