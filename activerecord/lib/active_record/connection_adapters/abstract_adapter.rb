@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "set"
 require "active_record/connection_adapters/sql_type_metadata"
 require "active_record/connection_adapters/abstract/schema_dumper"
 require "active_record/connection_adapters/abstract/schema_creation"
@@ -576,23 +575,31 @@ module ActiveRecord
       end
 
       # This is meant to be implemented by the adapters that support custom enum types
-      def create_enum(*) # :nodoc:
+      def create_enum(...) # :nodoc:
       end
 
       # This is meant to be implemented by the adapters that support custom enum types
-      def drop_enum(*) # :nodoc:
+      def drop_enum(...) # :nodoc:
       end
 
       # This is meant to be implemented by the adapters that support custom enum types
-      def rename_enum(*) # :nodoc:
+      def rename_enum(...) # :nodoc:
       end
 
       # This is meant to be implemented by the adapters that support custom enum types
-      def add_enum_value(*) # :nodoc:
+      def add_enum_value(...) # :nodoc:
       end
 
       # This is meant to be implemented by the adapters that support custom enum types
-      def rename_enum_value(*) # :nodoc:
+      def rename_enum_value(...) # :nodoc:
+      end
+
+      # This is meant to be implemented by the adapters that support virtual tables
+      def create_virtual_table(*) # :nodoc:
+      end
+
+      # This is meant to be implemented by the adapters that support virtual tables
+      def drop_virtual_table(*) # :nodoc:
       end
 
       def advisory_locks_enabled? # :nodoc:
@@ -1044,7 +1051,8 @@ module ActiveRecord
         end
 
         def retryable_connection_error?(exception)
-          exception.is_a?(ConnectionNotEstablished) || exception.is_a?(ConnectionFailed)
+          (exception.is_a?(ConnectionNotEstablished) && !exception.is_a?(ConnectionNotDefined)) ||
+            exception.is_a?(ConnectionFailed)
         end
 
         def invalidate_transaction(exception)
@@ -1105,24 +1113,25 @@ module ActiveRecord
           end
         end
 
-        def translate_exception_class(e, sql, binds)
-          message = "#{e.class.name}: #{e.message}"
+        def translate_exception_class(native_error, sql, binds)
+          return native_error if native_error.is_a?(ActiveRecordError)
 
-          exception = translate_exception(
-            e, message: message, sql: sql, binds: binds
+          message = "#{native_error.class.name}: #{native_error.message}"
+
+          active_record_error = translate_exception(
+            native_error, message: message, sql: sql, binds: binds
           )
-          exception.set_backtrace e.backtrace
-          exception
+          active_record_error.set_backtrace(native_error.backtrace)
+          active_record_error
         end
 
-        def log(sql, name = "SQL", binds = [], type_casted_binds = [], statement_name = nil, async: false, &block) # :doc:
+        def log(sql, name = "SQL", binds = [], type_casted_binds = [], async: false, &block) # :doc:
           @instrumenter.instrument(
             "sql.active_record",
             sql:               sql,
             name:              name,
             binds:             binds,
             type_casted_binds: type_casted_binds,
-            statement_name:    statement_name,
             async:             async,
             connection:        self,
             transaction:       current_transaction.user_transaction.presence,
@@ -1133,13 +1142,6 @@ module ActiveRecord
           raise ex.set_query(sql, binds)
         end
 
-        def transform_query(sql)
-          ActiveRecord.query_transformers.each do |transformer|
-            sql = transformer.call(sql, self)
-          end
-          sql
-        end
-
         def translate_exception(exception, message:, sql:, binds:)
           # override in derived class
           case exception
@@ -1148,10 +1150,6 @@ module ActiveRecord
           else
             ActiveRecord::StatementInvalid.new(message, sql: sql, binds: binds, connection_pool: @pool)
           end
-        end
-
-        def without_prepared_statement?(binds)
-          !prepared_statements || binds.empty?
         end
 
         def column_for(table_name, column_name)

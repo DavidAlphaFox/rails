@@ -9,7 +9,7 @@ gemfile(true) do
   # If you want to test against edge Rails replace the previous line with this:
   # gem "rails", github: "rails/rails", branch: "main"
 
-  gem "sqlite3", "~> 1.4"
+  gem "sqlite3"
 end
 
 require "active_record"
@@ -37,7 +37,7 @@ class Comment < ActiveRecord::Base
   belongs_to :post
 end
 
-class BugTest < Minitest::Test
+class BugTest < ActiveSupport::TestCase
   def test_association_stuff
     post = Post.create!
     post.comments << Comment.create!

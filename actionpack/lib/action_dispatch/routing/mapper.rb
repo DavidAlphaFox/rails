@@ -375,35 +375,18 @@ module ActionDispatch
             Routing::RouteSet::Dispatcher.new raise_on_name_error
           end
 
-          if Thread.respond_to?(:each_caller_location)
-            def route_source_location
-              if Mapper.route_source_locations
-                action_dispatch_dir = File.expand_path("..", __dir__)
-                Thread.each_caller_location do |location|
-                  next if location.path.start_with?(action_dispatch_dir)
+          def route_source_location
+            if Mapper.route_source_locations
+              action_dispatch_dir = File.expand_path("..", __dir__)
+              Thread.each_caller_location do |location|
+                next if location.path.start_with?(action_dispatch_dir)
 
-                  cleaned_path = Mapper.backtrace_cleaner.clean_frame(location.path)
-                  next if cleaned_path.nil?
+                cleaned_path = Mapper.backtrace_cleaner.clean_frame(location.path)
+                next if cleaned_path.nil?
 
-                  return "#{cleaned_path}:#{location.lineno}"
-                end
-                nil
+                return "#{cleaned_path}:#{location.lineno}"
               end
-            end
-          else
-            def route_source_location
-              if Mapper.route_source_locations
-                action_dispatch_dir = File.expand_path("..", __dir__)
-                caller_locations.each do |location|
-                  next if location.path.start_with?(action_dispatch_dir)
-
-                  cleaned_path = Mapper.backtrace_cleaner.clean_frame(location.path)
-                  next if cleaned_path.nil?
-
-                  return "#{cleaned_path}:#{location.lineno}"
-                end
-                nil
-              end
+              nil
             end
           end
       end
@@ -470,7 +453,6 @@ module ActionDispatch
         # When a pattern points to an internal route, the route's `:action` and
         # `:controller` should be set in options or hash shorthand. Examples:
         #
-        #     match 'photos/:id' => 'photos#show', via: :get
         #     match 'photos/:id', to: 'photos#show', via: :get
         #     match 'photos/:id', controller: 'photos', action: 'show', via: :get
         #
@@ -614,10 +596,6 @@ module ActionDispatch
         #
         #     mount SomeRackApp, at: "some_route"
         #
-        # Alternatively:
-        #
-        #     mount(SomeRackApp => "some_route")
-        #
         # For options, see `match`, as `mount` uses it internally.
         #
         # All mounted applications come with routing helpers to access them. These are
@@ -625,7 +603,7 @@ module ActionDispatch
         # `some_rack_app_path` or `some_rack_app_url`. To customize this helper's name,
         # use the `:as` option:
         #
-        #     mount(SomeRackApp => "some_route", as: "exciting")
+        #     mount(SomeRackApp, at: "some_route", as: "exciting")
         #
         # This will generate the `exciting_path` and `exciting_url` helpers which can be
         # used to navigate to this mounted app.
@@ -771,6 +749,16 @@ module ActionDispatch
         #     options 'carrots', to: 'food#carrots'
         def options(*args, &block)
           map_method(:options, args, &block)
+        end
+
+        # Define a route that recognizes HTTP CONNECT (and GET) requests. More
+        # specifically this recognizes HTTP/1 protocol upgrade requests and HTTP/2
+        # CONNECT requests with the protocol pseudo header. For supported arguments,
+        # see [match](rdoc-ref:Base#match)
+        #
+        #     connect 'live', to: 'live#index'
+        def connect(*args, &block)
+          map_method([:get, :connect], args, &block)
         end
 
         private
@@ -1048,6 +1036,7 @@ module ActionDispatch
         end
 
         # Allows you to set default parameters for a route, such as this:
+        #
         #     defaults id: 'home' do
         #       match 'scoped_pages/(:id)', to: 'pages#show'
         #     end
@@ -1173,11 +1162,26 @@ module ActionDispatch
         CANONICAL_ACTIONS = %w(index create new show update destroy)
 
         class Resource # :nodoc:
+          class << self
+            def default_actions(api_only)
+              if api_only
+                [:index, :create, :show, :update, :destroy]
+              else
+                [:index, :create, :new, :show, :update, :destroy, :edit]
+              end
+            end
+          end
+
           attr_reader :controller, :path, :param
 
           def initialize(entities, api_only, shallow, options = {})
             if options[:param].to_s.include?(":")
               raise ArgumentError, ":param option can't contain colons"
+            end
+
+            valid_actions = self.class.default_actions(false) # ignore api_only for this validation
+            if invalid_actions = invalid_only_except_options(options, valid_actions).presence
+              raise ArgumentError, ":only and :except must include only #{valid_actions}, but also included #{invalid_actions}"
             end
 
             @name       = entities.to_s
@@ -1193,11 +1197,7 @@ module ActionDispatch
           end
 
           def default_actions
-            if @api_only
-              [:index, :create, :show, :update, :destroy]
-            else
-              [:index, :create, :new, :show, :update, :destroy, :edit]
-            end
+            self.class.default_actions(@api_only)
           end
 
           def actions
@@ -1265,9 +1265,24 @@ module ActionDispatch
           end
 
           def singleton?; false; end
+
+          private
+            def invalid_only_except_options(options, valid_actions)
+              options.values_at(:only, :except).flatten.compact.uniq.map(&:to_sym) - valid_actions
+            end
         end
 
         class SingletonResource < Resource # :nodoc:
+          class << self
+            def default_actions(api_only)
+              if api_only
+                [:show, :create, :update, :destroy]
+              else
+                [:show, :create, :update, :destroy, :new, :edit]
+              end
+            end
+          end
+
           def initialize(entities, api_only, shallow, options)
             super
             @as         = nil
@@ -1276,11 +1291,7 @@ module ActionDispatch
           end
 
           def default_actions
-            if @api_only
-              [:show, :create, :update, :destroy]
-            else
-              [:show, :create, :update, :destroy, :new, :edit]
-            end
+            self.class.default_actions(@api_only)
           end
 
           def plural
@@ -1341,7 +1352,7 @@ module ActionDispatch
           end
 
           with_scope_level(:resource) do
-            options = apply_action_options options
+            options = apply_action_options :resource, options
             resource_scope(SingletonResource.new(resources.pop, api_only?, @scope[:shallow], options)) do
               yield if block_given?
 
@@ -1511,7 +1522,7 @@ module ActionDispatch
           end
 
           with_scope_level(:resources) do
-            options = apply_action_options options
+            options = apply_action_options :resources, options
             resource_scope(Resource.new(resources.pop, api_only?, @scope[:shallow], options)) do
               yield if block_given?
 
@@ -1672,7 +1683,6 @@ module ActionDispatch
         # Matches a URL pattern to one or more routes. For more information, see
         # [match](rdoc-ref:Base#match).
         #
-        #     match 'path' => 'controller#action', via: :patch
         #     match 'path', to: 'controller#action', via: :post
         #     match 'path', 'otherpath', on: :member, via: :get
         def match(path, *rest, &block)
@@ -1781,17 +1791,32 @@ module ActionDispatch
             false
           end
 
-          def apply_action_options(options)
+          def apply_action_options(method, options)
             return options if action_options? options
-            options.merge scope_action_options
+            options.merge scope_action_options(method)
           end
 
           def action_options?(options)
             options[:only] || options[:except]
           end
 
-          def scope_action_options
-            @scope[:action_options] || {}
+          def scope_action_options(method)
+            return {} unless @scope[:action_options]
+
+            actions = applicable_actions_for(method)
+            @scope[:action_options].dup.tap do |options|
+              (options[:only] = Array(options[:only]) & actions) if options[:only]
+              (options[:except] = Array(options[:except]) & actions) if options[:except]
+            end
+          end
+
+          def applicable_actions_for(method)
+            case method
+            when :resource
+              SingletonResource.default_actions(api_only?)
+            when :resources
+              Resource.default_actions(api_only?)
+            end
           end
 
           def resource_scope?
@@ -1934,6 +1959,11 @@ module ActionDispatch
           end
 
           def map_match(paths, options)
+            ActionDispatch.deprecator.warn(<<-MSG.squish) if paths.count > 1
+              Mapping a route with multiple paths is deprecated and
+              will be removed in Rails 8.1. Please use multiple method calls instead.
+            MSG
+
             if (on = options[:on]) && !VALID_ON_OPTIONS.include?(on)
               raise ArgumentError, "Unknown scope #{on.inspect} given to :on"
             end
@@ -2024,7 +2054,7 @@ module ActionDispatch
               name_for_action(options.delete(:as), action)
             end
 
-            path = Mapping.normalize_path URI::DEFAULT_PARSER.escape(path), formatted
+            path = Mapping.normalize_path URI::RFC2396_PARSER.escape(path), formatted
             ast = Journey::Parser.parse path
 
             mapping = Mapping.build(@scope, @set, ast, controller, default_action, to, via, formatted, options_constraints, anchor, options)
@@ -2199,8 +2229,8 @@ module ActionDispatch
         end
 
         # Define custom polymorphic mappings of models to URLs. This alters the behavior
-        # of `polymorphic_url` and consequently the behavior of `link_to` and `form_for`
-        # when passed a model instance, e.g:
+        # of `polymorphic_url` and consequently the behavior of `link_to`, `form_with`
+        # and `form_for` when passed a model instance, e.g:
         #
         #     resource :basket
         #
@@ -2209,7 +2239,7 @@ module ActionDispatch
         #     end
         #
         # This will now generate "/basket" when a `Basket` instance is passed to
-        # `link_to` or `form_for` instead of the standard "/baskets/:id".
+        # `link_to`, `form_with` or `form_for` instead of the standard "/baskets/:id".
         #
         # NOTE: This custom behavior only applies to simple polymorphic URLs where a
         # single model instance is passed and not more complicated forms, e.g:
@@ -2266,9 +2296,9 @@ module ActionDispatch
 
         attr_reader :parent, :scope_level
 
-        def initialize(hash, parent = NULL, scope_level = nil)
-          @hash = hash
+        def initialize(hash, parent = ROOT, scope_level = nil)
           @parent = parent
+          @hash = parent ? parent.frame.merge(hash) : hash
           @scope_level = scope_level
         end
 
@@ -2281,7 +2311,7 @@ module ActionDispatch
         end
 
         def root?
-          @parent.null?
+          @parent == ROOT
         end
 
         def resources?
@@ -2326,23 +2356,22 @@ module ActionDispatch
         end
 
         def [](key)
-          scope = find { |node| node.frame.key? key }
-          scope && scope.frame[key]
+          frame[key]
         end
+
+        def frame; @hash; end
 
         include Enumerable
 
         def each
           node = self
-          until node.equal? NULL
+          until node.equal? ROOT
             yield node
             node = node.parent
           end
         end
 
-        def frame; @hash; end
-
-        NULL = Scope.new(nil, nil)
+        ROOT = Scope.new({}, nil)
       end
 
       def initialize(set) # :nodoc:

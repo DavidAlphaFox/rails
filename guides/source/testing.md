@@ -702,7 +702,7 @@ the migrations against the development database (`bin/rails db:migrate`) will
 bring the schema up to date.
 
 NOTE: If there were modifications to existing migrations, the test database needs to
-be rebuilt. This can be done by executing `bin/rails db:test:prepare`.
+be rebuilt. This can be done by executing `bin/rails test:db`.
 
 ### The Low-Down on Fixtures
 
@@ -1395,7 +1395,7 @@ test "ajax request" do
 end
 ```
 
-### The Three Hashes of the Apocalypse
+### The Three Hashketeers!
 
 After a request has been made and processed, you will have 3 Hash objects ready for use:
 
@@ -1449,7 +1449,7 @@ get articles_url, headers: { "HTTP_REFERER": "http://example.com/home" } # simul
 
 ### Testing `flash` Notices
 
-If you remember from earlier, one of the Three Hashes of the Apocalypse was `flash`.
+If you remember from earlier, one of the Three Hashketeers was `flash`.
 
 We want to add a `flash` message to our blog application whenever someone
 successfully creates a new Article.
@@ -2224,7 +2224,7 @@ class BillingJobTest < ActiveJob::TestCase
     assert_raises(InsufficientFundsError) do
       BillingJob.new(empty_account, product).perform
     end
-    refute account.reload.charged_for?(product)
+    assert_not account.reload.charged_for?(product)
   end
 end
 ```

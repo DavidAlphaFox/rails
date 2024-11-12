@@ -33,10 +33,6 @@ jobs:
       - name: Generate rails app sqlite3
         run: bundle exec railties/exe/rails new myapp_sqlite --database="sqlite3" --dev --devcontainer
 
-      - name: Remove old deprecated docker-compose
-        run: |
-          sudo rm /usr/local/bin/docker-compose
-
       - name: Test devcontainer sqlite3
         uses: devcontainers/ci@v0.3
         with:
@@ -44,7 +40,7 @@ jobs:
           imageName: ghcr.io/rails/smoke-test-devcontainer
           cacheFrom: ghcr.io/rails/smoke-test-devcontainer
           imageTag: sqlite3
-          push: ${{ github.repository_owner == 'rails' && 'filter' || 'never' }}
+          push: ${{ github.repository == 'rails/rails' && 'filter' || 'never' }}
           refFilterForPush: refs/heads/main
           runCmd: bin/rails g scaffold Post && bin/rails db:migrate && bin/rails test
 
@@ -61,7 +57,7 @@ jobs:
           imageName: ghcr.io/rails/smoke-test-devcontainer
           cacheFrom: ghcr.io/rails/smoke-test-devcontainer
           imageTag: postgresql
-          push: ${{ github.repository_owner == 'rails' && 'filter' || 'never' }}
+          push: ${{ github.repository == 'rails/rails' && 'filter' || 'never' }}
           refFilterForPush: refs/heads/main
           runCmd: bin/rails g scaffold Post && bin/rails db:migrate && bin/rails test && bin/rails test:system
 
@@ -78,7 +74,7 @@ jobs:
           imageName: ghcr.io/rails/smoke-test-devcontainer
           cacheFrom: ghcr.io/rails/smoke-test-devcontainer
           imageTag: mysql
-          push: ${{ github.repository_owner == 'rails' && 'filter' || 'never' }}
+          push: ${{ github.repository == 'rails/rails' && 'filter' || 'never' }}
           refFilterForPush: refs/heads/main
           runCmd: bin/rails g scaffold Post && bin/rails db:migrate && bin/rails test
 
@@ -95,7 +91,7 @@ jobs:
           imageName: ghcr.io/rails/smoke-test-devcontainer
           cacheFrom: ghcr.io/rails/smoke-test-devcontainer
           imageTag: trilogy
-          push: ${{ github.repository_owner == 'rails' && 'filter' || 'never' }}
+          push: ${{ github.repository == 'rails/rails' && 'filter' || 'never' }}
           refFilterForPush: refs/heads/main
           runCmd: bin/rails g scaffold Post && bin/rails db:migrate && bin/rails test
 
