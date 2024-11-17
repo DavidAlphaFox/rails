@@ -5,7 +5,7 @@
 # the blob that was created up front.
 class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
   def create
-    blob = ActiveStorage::Blob.create_before_direct_upload!(**blob_args)
+    blob = ActiveStorage::Blob.create_before_direct_upload!(**blob_args) #保存上传文件的元信息
     render json: direct_upload_json(blob)
   end
 
@@ -14,7 +14,7 @@ class ActiveStorage::DirectUploadsController < ActiveStorage::BaseController
       params.expect(blob: [:filename, :byte_size, :checksum, :content_type, metadata: {}]).to_h.symbolize_keys
     end
 
-    def direct_upload_json(blob)
+    def direct_upload_json(blob) #生成对应的云存储信息
       blob.as_json(root: false, methods: :signed_id).merge(direct_upload: {
         url: blob.service_url_for_direct_upload,
         headers: blob.service_headers_for_direct_upload
