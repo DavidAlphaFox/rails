@@ -19,7 +19,7 @@ class ActiveStorage::DiskController < ActiveStorage::BaseController
     head :not_found
   end
 
-  def update
+  def update #此处是寻找相应的服务,将文件转发给对应的服务
     if token = decode_verified_token ##先解码token
       if acceptable_content?(token) ##是否是可以处理的文件
         named_disk_service(token[:service_name]).upload token[:key], request.body, checksum: token[:checksum] #进行保存
