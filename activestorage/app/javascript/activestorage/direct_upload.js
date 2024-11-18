@@ -19,7 +19,7 @@ export class DirectUpload {
         callback(error)
         return
       }
-
+      //先在后台创建上传记录，结果更新到blob.directUploadData字段中，在这个过程中，后台会生成一个URL
       const blob = new BlobRecord(this.file, checksum, this.url, this.customHeaders)
       notify(this.delegate, "directUploadWillCreateBlobWithXHR", blob.xhr)
 
@@ -27,7 +27,7 @@ export class DirectUpload {
         if (error) {
           callback(error)
         } else {
-          const upload = new BlobUpload(blob)
+          const upload = new BlobUpload(blob) //上传全新的blob到云服务中
           notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr)
           upload.create(error => {
             if (error) {
