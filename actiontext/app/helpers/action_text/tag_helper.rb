@@ -37,7 +37,7 @@ module ActionText
       options[:data] ||= {}
       options[:data][:direct_upload_url] ||= main_app.rails_direct_uploads_url
       options[:data][:blob_url_template] ||= main_app.rails_service_blob_url(":signed_id", ":filename")
-
+      #在编辑的时候需要"action-text-attachment"替换会Trix的标签
       editor_tag = content_tag("trix-editor", "", options)
       input_tag = hidden_field_tag(name, value.try(:to_trix_html) || value, id: options[:input], form: form)
 

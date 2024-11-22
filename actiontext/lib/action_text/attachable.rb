@@ -24,7 +24,7 @@ module ActionText
       # Extracts the `ActionText::Attachable` from the attachment HTML node:
       #
       #     person = Person.create! name: "Javan"
-      #     html = %Q(<action-text-attachment sgid="#{person.attachable_sgid}"></action-text-attachment>)
+      #     html = %Q(<sgid="#{person.attachable_sgid}"></action-text-attachment>)
       #     fragment = ActionText::Fragment.wrap(html)
       #     attachment_node = fragment.find_all(ActionText::Attachment.tag_name).first
       #     ActionText::Attachable.from_node(attachment_node) # => person

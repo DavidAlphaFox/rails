@@ -14,7 +14,7 @@ module ActionText
           Fragment.wrap(content).replace(TrixAttachment::SELECTOR) do |node|
             from_trix_attachment(TrixAttachment.new(node))
           end
-        end
+        end #此处会将所有"[data-trix-attachment]"标签替换掉，替换为"action-text-attachment"
 
         def from_trix_attachment(trix_attachment)
           from_attributes(trix_attachment.attributes)
