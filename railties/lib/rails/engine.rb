@@ -359,9 +359,9 @@ module Rails
       delegate :eager_load!, to: :instance
 
       def inherited(base)
-        unless base.abstract_railtie?
-          Rails::Railtie::Configuration.eager_load_namespaces << base
-
+        unless base.abstract_railtie? #不是Rails的抽象类或者模块
+          Rails::Railtie::Configuration.eager_load_namespaces << base #把继承Engine的类加入快速加载列表中
+          # 给这个类增加called_from的属性，便于以后可以进行操作
           base.called_from = begin
             call_stack = caller_locations.map { |l| l.absolute_path || l.path }
 

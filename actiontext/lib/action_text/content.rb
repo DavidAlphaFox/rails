@@ -131,7 +131,7 @@ module ActionText
       render_attachments(with_full_attributes: false, &:to_plain_text).fragment.to_plain_text
     end
 
-    def to_trix_html
+    def to_trix_html #先转化成Trix的attachment，然后在渲染
       render_attachments(&:to_trix_attachment).to_html
     end
 

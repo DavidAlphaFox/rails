@@ -19,7 +19,7 @@ module ActionText
 
     class << self
       def from_attributes(attributes)
-        attributes = process_attributes(attributes)
+        attributes = process_attributes(attributes) #获得所有的属性
 
         trix_attachment_attributes = attributes.except(*COMPOSED_ATTRIBUTES)
         trix_attributes = attributes.slice(*COMPOSED_ATTRIBUTES)
