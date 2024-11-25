@@ -84,7 +84,7 @@ module Rails
       def initializers_for(binding)
         Collection.new(initializers_chain.map { |i| i.bind(binding) })
       end
-
+      # 初始化各种配置的方法
       def initializer(name, opts = {}, &blk)
         raise ArgumentError, "A block must be passed when defining an initializer" unless blk
         opts[:after] ||= initializers.last.name unless initializers.empty? || initializers.find { |i| i.name == opts[:before] }
