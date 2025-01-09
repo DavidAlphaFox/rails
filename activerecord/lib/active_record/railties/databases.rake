@@ -160,7 +160,7 @@ db_namespace = namespace :db do
       end
     end
 
-    # desc 'Resets your database using your migrations for the current environment'
+    desc "Resets your database using your migrations for the current environment"
     task reset: ["db:drop", "db:create", "db:schema:dump", "db:migrate"]
 
     desc 'Run the "up" for a given migration VERSION.'
@@ -333,7 +333,7 @@ db_namespace = namespace :db do
       pending_migrations << pool.migration_context.open.pending_migrations
     end
 
-    pending_migrations = pending_migrations.flatten!
+    pending_migrations.flatten!
 
     if pending_migrations.any?
       puts "You have #{pending_migrations.size} pending #{pending_migrations.size > 1 ? 'migrations:' : 'migration:'}"

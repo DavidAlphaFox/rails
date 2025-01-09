@@ -513,7 +513,7 @@ module ActionController
     # It is recommended to use `expect` instead:
     #
     #     def person_params
-    #       # params.expect(person: :name).require(:name)
+    #       params.expect(person: :name).require(:name)
     #     end
     #
     def require(key)
@@ -621,7 +621,7 @@ module ActionController
     #     })
     #
     #     params.permit(person: :contact).require(:person)
-    #     # => #<ActionController::Parameters {} permitted: true>
+    #     # => ActionController::ParameterMissing: param is missing or the value is empty or invalid: person
     #
     #     params.permit(person: { contact: :phone }).require(:person)
     #     # => #<ActionController::Parameters {"contact"=>#<ActionController::Parameters {"phone"=>"555-1234"} permitted: true>} permitted: true>

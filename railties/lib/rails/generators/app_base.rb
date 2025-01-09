@@ -71,7 +71,8 @@ module Rails
         class_option :skip_action_cable,   type: :boolean, aliases: "-C", default: nil,
                                            desc: "Skip Action Cable files"
 
-        class_option :skip_asset_pipeline, type: :boolean, aliases: "-A", default: nil
+        class_option :skip_asset_pipeline, type: :boolean, aliases: "-A", default: nil,
+                                           desc: "Skip the asset pipeline setup"
 
         class_option :skip_javascript,     type: :boolean, aliases: ["-J", "--skip-js"], default: (true if name == "plugin"),
                                            desc: "Skip JavaScript files"
@@ -537,6 +538,11 @@ module Rails
         using_node? and `yarn --version`[/\d+\.\d+\.\d+/]
       rescue
         "latest"
+      end
+
+      def yarn_through_corepack?
+        true if dockerfile_yarn_version == "latest"
+        dockerfile_yarn_version >= "2"
       end
 
       def dockerfile_bun_version

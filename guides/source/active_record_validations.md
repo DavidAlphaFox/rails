@@ -1,4 +1,4 @@
-**DO NOT READ THIS FILE ON GITHUB, GUIDES ARE PUBLISHED ON https://guides.rubyonrails.org.**
+**DO NOT READ THIS FILE ON GITHUB, GUIDES ARE PUBLISHED ON <https://guides.rubyonrails.org>.**
 
 Active Record Validations
 =========================
@@ -361,7 +361,7 @@ In modern Rails applications, the more concise validate syntax is commonly used,
 for example:
 
 ```ruby
-validate :name, presence: true
+validates :name, presence: true
 ```
 
 However, older versions of Rails used "helper" methods, such as:
@@ -590,7 +590,7 @@ These options are all supported:
 
 NOTE: The validator requires a compare option be supplied. Each option accepts a
 value, proc, or symbol. Any class that includes
-[Comparable](https://ruby-doc.org/3.3.5/Comparable.html) can be compared.
+[Comparable](https://docs.ruby-lang.org/en/master/Comparable.html) can be compared.
 
 ### `format`
 
@@ -1156,7 +1156,7 @@ empty string for example.
 
 ```ruby
 class Topic < ApplicationRecord
-  validates :title, length: { is: 5 }, allow_blank: true
+  validates :title, length: { is: 6 }, allow_blank: true
 end
 ```
 
@@ -1166,7 +1166,7 @@ irb> Topic.create(title: "").valid?
 irb> Topic.create(title: nil).valid?
 => true
 irb> Topic.create(title: "short").valid?
-=> false # 'short' is not of length 5, so validation fails even though it's not blank
+=> false # 'short' is not of length 6, so validation fails even though it's not blank
 ```
 
 ### `:message`

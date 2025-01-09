@@ -186,6 +186,9 @@ module ActiveSupport
     #   @last_mod_time = Time.now  # Invalidate the entire cache by changing namespace
     #
     class Store
+      # Default +ConnectionPool+ options
+      DEFAULT_POOL_OPTIONS = { size: 5, timeout: 5 }.freeze
+
       cattr_accessor :logger, instance_writer: true
       cattr_accessor :raise_on_invalid_cache_expiration_time, default: false
 
@@ -194,9 +197,6 @@ module ActiveSupport
 
       class << self
         private
-          DEFAULT_POOL_OPTIONS = { size: 5, timeout: 5 }.freeze
-          private_constant :DEFAULT_POOL_OPTIONS
-
           def retrieve_pool_options(options)
             if options.key?(:pool)
               pool_options = options.delete(:pool)
@@ -386,7 +386,7 @@ module ActiveSupport
       #   process can try to generate a new value after the extended time window
       #   has elapsed.
       #
-      #     # Set all values to expire after one minute.
+      #     # Set all values to expire after one second.
       #     cache = ActiveSupport::Cache::MemoryStore.new(expires_in: 1)
       #
       #     cache.write("foo", "original value")
@@ -657,6 +657,8 @@ module ActiveSupport
       #   from the cache, if the cached version does not match the requested
       #   version, the read will be treated as a cache miss. This feature is
       #   used to support recyclable cache keys.
+      #
+      # * +:unless_exist+ - Prevents overwriting an existing cache entry.
       #
       # Other options will be handled by the specific cache store implementation.
       def write(name, value, options = nil)

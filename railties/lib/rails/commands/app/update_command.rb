@@ -12,6 +12,9 @@ module Rails
 
         desc "update", "Update configs and some other initially generated files (or use just update:configs or update:bin)"
         def perform
+          require_application!
+          Rails.application.deprecators.silenced = true
+
           configs
           bin
           public_directory

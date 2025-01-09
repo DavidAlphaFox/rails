@@ -1,4 +1,4 @@
-**DO NOT READ THIS FILE ON GITHUB, GUIDES ARE PUBLISHED ON https://guides.rubyonrails.org.**
+**DO NOT READ THIS FILE ON GITHUB, GUIDES ARE PUBLISHED ON <https://guides.rubyonrails.org>.**
 
 Action Mailer Basics
 ====================
@@ -156,7 +156,7 @@ Here is a sample HTML template that can be used for the welcome email:
   your username is: <%= @user.login %>.<br>
 </p>
 <p>
-  To login to the site, just follow this link: <%= link_to 'login`, login_url %>.
+  To login to the site, just follow this link: <%= link_to 'login', login_url %>.
 </p>
 <p>Thanks for joining and have a great day!</p>
 ```

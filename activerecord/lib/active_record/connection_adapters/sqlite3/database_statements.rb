@@ -109,6 +109,7 @@ module ActiveRecord
             @last_affected_rows = raw_connection.changes
             verified!
 
+            notification_payload[:affected_rows] = @last_affected_rows
             notification_payload[:row_count] = result&.length || 0
             result
           end
@@ -137,7 +138,11 @@ module ActiveRecord
           end
 
           def default_insert_value(column)
-            column.default
+            if column.default_function
+              Arel.sql(column.default_function)
+            else
+              column.default
+            end
           end
       end
     end

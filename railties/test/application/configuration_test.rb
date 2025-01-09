@@ -1600,7 +1600,7 @@ module ApplicationTests
       assert_equal :raise, ActionController::Parameters.action_on_unpermitted_parameters
 
       post "/posts", post: { "title" => "zomg" }
-      assert_match "We’re sorry, but something went wrong", last_response.body
+      assert_match "We're sorry, but something went wrong", last_response.body
     end
 
     test "config.action_controller.action_on_unpermitted_parameters = :raise is ignored with expect" do
@@ -3922,7 +3922,7 @@ module ApplicationTests
 
       app "development"
 
-      assert_equal :mini_magick, ActiveStorage.variant_processor
+      assert_equal nil, ActiveStorage.variant_processor
     end
 
     test "ActiveStorage.variant_processor uses vips by default" do

@@ -1,4 +1,4 @@
-**DO NOT READ THIS FILE ON GITHUB, GUIDES ARE PUBLISHED ON https://guides.rubyonrails.org.**
+**DO NOT READ THIS FILE ON GITHUB, GUIDES ARE PUBLISHED ON <https://guides.rubyonrails.org>.**
 
 Rails Routing from the Outside In
 =================================
@@ -822,10 +822,8 @@ Will match an incoming request with a path to `admin` subdomain.
 You can also specify constraints by using a [`constraints`][] block:
 
 ```ruby
-namespace :admin do
-  constraints subdomain: "admin" do
-    resources :photos
-  end
+constraints subdomain: "admin" do
+  resources :photos
 end
 ```
 
