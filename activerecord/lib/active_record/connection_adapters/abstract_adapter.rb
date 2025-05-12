@@ -150,7 +150,6 @@ module ActiveRecord
         end
 
         @owner = nil
-        @instrumenter = ActiveSupport::Notifications.instrumenter
         @pool = ActiveRecord::ConnectionAdapters::NullPool.new
         @idle_since = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         @visitor = arel_visitor
@@ -191,19 +190,6 @@ module ActiveRecord
         end
       end
 
-      EXCEPTION_NEVER = { Exception => :never }.freeze # :nodoc:
-      EXCEPTION_IMMEDIATE = { Exception => :immediate }.freeze # :nodoc:
-      private_constant :EXCEPTION_NEVER, :EXCEPTION_IMMEDIATE
-      def with_instrumenter(instrumenter, &block) # :nodoc:
-        Thread.handle_interrupt(EXCEPTION_NEVER) do
-          previous_instrumenter = @instrumenter
-          @instrumenter = instrumenter
-          Thread.handle_interrupt(EXCEPTION_IMMEDIATE, &block)
-        ensure
-          @instrumenter = previous_instrumenter
-        end
-      end
-
       def check_if_write_query(sql) # :nodoc:
         if preventing_writes? && write_query?(sql)
           raise ActiveRecord::ReadOnlyError, "Write query attempted while in readonly mode: #{sql}"
@@ -240,9 +226,9 @@ module ActiveRecord
       # the value of +current_preventing_writes+.
       def preventing_writes?
         return true if replica?
-        return false if connection_class.nil?
+        return false if connection_descriptor.nil?
 
-        connection_class.current_preventing_writes
+        connection_descriptor.current_preventing_writes
       end
 
       def prepared_statements?
@@ -274,7 +260,11 @@ module ActiveRecord
       end
 
       def valid_type?(type) # :nodoc:
-        !native_database_types[type].nil?
+        self.class.valid_type?(type)
+      end
+
+      def native_database_types # :nodoc:
+        self.class.native_database_types
       end
 
       # this method must only be called while holding connection pool's mutex
@@ -293,8 +283,8 @@ module ActiveRecord
         @owner = ActiveSupport::IsolatedExecutionState.context
       end
 
-      def connection_class # :nodoc:
-        @pool.connection_class
+      def connection_descriptor # :nodoc:
+        @pool.connection_descriptor
       end
 
       # The role (e.g. +:writing+) for the current connection. In a
@@ -569,6 +559,10 @@ module ActiveRecord
         false
       end
 
+      def supports_disabling_indexes?
+        false
+      end
+
       def return_value_after_insert?(column) # :nodoc:
         column.auto_populated?
       end
@@ -687,7 +681,7 @@ module ActiveRecord
 
           reset_transaction(restore: restore_transactions) do
             clear_cache!(new_connection: true)
-            configure_connection
+            attempt_configure_connection
           end
         rescue => original_exception
           translated_exception = translate_exception_class(original_exception, nil, nil)
@@ -740,7 +734,7 @@ module ActiveRecord
       def reset!
         clear_cache!(new_connection: true)
         reset_transaction
-        configure_connection
+        attempt_configure_connection
       end
 
       # Removes the connection from the pool and disconnect it.
@@ -776,7 +770,7 @@ module ActiveRecord
             if @unconfigured_connection
               @raw_connection = @unconfigured_connection
               @unconfigured_connection = nil
-              configure_connection
+              attempt_configure_connection
               @last_activity = Process.clock_gettime(Process::CLOCK_MONOTONIC)
               @verified = true
               return
@@ -894,6 +888,10 @@ module ActiveRecord
             register_class_with_precision m, %r(\A[^\(]*datetime)i, Type::DateTime, timezone: default_timezone
             m.alias_type %r(\A[^\(]*timestamp)i, "datetime"
           end
+        end
+
+        def valid_type?(type) # :nodoc:
+          !native_database_types[type].nil?
         end
 
         private
@@ -1145,14 +1143,15 @@ module ActiveRecord
           active_record_error
         end
 
-        def log(sql, name = "SQL", binds = [], type_casted_binds = [], async: false, &block) # :doc:
-          @instrumenter.instrument(
+        def log(sql, name = "SQL", binds = [], type_casted_binds = [], async: false, allow_retry: false, &block) # :doc:
+          instrumenter.instrument(
             "sql.active_record",
             sql:               sql,
             name:              name,
             binds:             binds,
             type_casted_binds: type_casted_binds,
             async:             async,
+            allow_retry:       allow_retry,
             connection:        self,
             transaction:       current_transaction.user_transaction.presence,
             affected_rows:     0,
@@ -1161,6 +1160,10 @@ module ActiveRecord
           )
         rescue ActiveRecord::StatementInvalid => ex
           raise ex.set_query(sql, binds)
+        end
+
+        def instrumenter # :nodoc:
+          ActiveSupport::IsolatedExecutionState[:active_record_instrumenter] ||= ActiveSupport::Notifications.instrumenter
         end
 
         def translate_exception(exception, message:, sql:, binds:)
@@ -1222,6 +1225,13 @@ module ActiveRecord
         # holding @lock (or from #initialize).
         def configure_connection
           check_version
+        end
+
+        def attempt_configure_connection
+          configure_connection
+        rescue Exception # Need to handle things such as Timeout::ExitException
+          disconnect!
+          raise
         end
 
         def default_prepared_statements

@@ -141,7 +141,7 @@ module ActiveRecord
     #
     #   Product.where(["price = %?", price]).sole
     def sole
-      found, undesired = limit(2)
+      found, undesired = take(2)
 
       if found.nil?
         raise_record_not_found_exception!
@@ -638,7 +638,7 @@ module ActiveRecord
       end
 
       def ordered_relation
-        if order_values.empty? && (model.implicit_order_column || !model.query_constraints_list.nil? || primary_key)
+        if order_values.empty? && !_order_columns.empty?
           order(_order_columns.map { |column| table[column].asc })
         else
           self
@@ -646,16 +646,13 @@ module ActiveRecord
       end
 
       def _order_columns
-        oc = []
+        columns = Array(model.implicit_order_column)
 
-        oc << model.implicit_order_column if model.implicit_order_column
-        oc << model.query_constraints_list if model.query_constraints_list
+        return columns.compact if columns.length.positive? && columns.last.nil?
 
-        if model.primary_key && model.query_constraints_list.nil?
-          oc << model.primary_key
-        end
+        columns += Array(model.query_constraints_list || model.primary_key)
 
-        oc.flatten.uniq.compact
+        columns.uniq.compact
       end
   end
 end

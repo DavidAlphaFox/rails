@@ -61,6 +61,14 @@ module ActiveRecord
           @previous_read_uncommitted = nil
         end
 
+        def default_insert_value(column) # :nodoc:
+          if column.default_function
+            Arel.sql(column.default_function)
+          else
+            column.default
+          end
+        end
+
         private
           def internal_begin_transaction(mode, isolation)
             if isolation
@@ -87,7 +95,7 @@ module ActiveRecord
                 stmt.step
                 ActiveRecord::Result.empty
               else
-                ActiveRecord::Result.new(stmt.columns, stmt.to_a)
+                ActiveRecord::Result.new(stmt.columns, stmt.to_a, stmt.types.map { |t| type_map.lookup(t) })
               end
             else
               # Don't cache statements if they are not prepared.
@@ -100,7 +108,7 @@ module ActiveRecord
                   stmt.step
                   ActiveRecord::Result.empty
                 else
-                  ActiveRecord::Result.new(stmt.columns, stmt.to_a)
+                  ActiveRecord::Result.new(stmt.columns, stmt.to_a, stmt.types.map { |t| type_map.lookup(t) })
                 end
               ensure
                 stmt.close
@@ -135,14 +143,6 @@ module ActiveRecord
 
           def returning_column_values(result)
             result.rows.first
-          end
-
-          def default_insert_value(column)
-            if column.default_function
-              Arel.sql(column.default_function)
-            else
-              column.default
-            end
           end
       end
     end

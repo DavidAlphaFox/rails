@@ -262,4 +262,49 @@ class CurrentAttributesTest < ActiveSupport::TestCase
       end
     end
   end
+
+  test "method_added hook doesn't reach the instance. Fix for #54646" do
+    current = Class.new(ActiveSupport::CurrentAttributes) do
+      def self.name
+        "MyCurrent"
+      end
+
+      def foo; end # Sets the cache because of a `method_added` hook
+
+      attribute :bar, default: {}
+    end
+
+    assert_instance_of(Hash, current.bar)
+  end
+
+  test "instance delegators are eagerly defined" do
+    current = Class.new(ActiveSupport::CurrentAttributes) do
+      def self.name
+        "MyCurrent"
+      end
+
+      def regular
+        :regular
+      end
+
+      attribute :attr, default: :att
+    end
+
+    assert current.singleton_class.method_defined?(:attr)
+    assert current.singleton_class.method_defined?(:attr=)
+    assert current.singleton_class.method_defined?(:regular)
+  end
+
+  test "attribute delegators have precise signature" do
+    current = Class.new(ActiveSupport::CurrentAttributes) do
+      def self.name
+        "MyCurrent"
+      end
+
+      attribute :attr, default: :att
+    end
+
+    assert_equal [], current.method(:attr).parameters
+    assert_equal [[:req, :value]], current.method(:attr=).parameters
+  end
 end

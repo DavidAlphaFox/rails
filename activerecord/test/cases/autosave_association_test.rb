@@ -19,6 +19,7 @@ require "models/order"
 require "models/parrot"
 require "models/pirate"
 require "models/project"
+require "models/price_estimate"
 require "models/ship"
 require "models/ship_part"
 require "models/squeak"
@@ -40,9 +41,6 @@ require "models/chef"
 require "models/cake_designer"
 require "models/drink_designer"
 require "models/cpk"
-require "models/family"
-require "models/family_tree"
-require "models/user"
 
 class TestAutosaveAssociationsInGeneral < ActiveRecord::TestCase
   def test_autosave_works_even_when_other_callbacks_update_the_parent_model
@@ -879,6 +877,35 @@ class TestDefaultAutosaveAssociationOnAHasManyAssociation < ActiveRecord::TestCa
     assert_equal no_of_clients + 1, Client.count
   end
 
+  def test_circular_autosave_does_not_validate_children
+    person = Class.new(ActiveRecord::Base) {
+      self.table_name = "readers"
+      validate :should_be_funny
+      def self.name; "Reader"; end
+
+      attribute :catch_phrase, :string
+      attribute :reader_id
+
+      has_many :children, autosave: true, anonymous_class: self
+      belongs_to :parent, autosave: true, anonymous_class: self
+
+      private
+        def should_be_funny
+          unless catch_phrase == "funny"
+            errors.add :base, "not funny"
+          end
+        end
+    }
+    c = person.new(catch_phrase: "boring")
+    c.children << c
+    c.post_id = 0
+    c.person_id = 0
+    c.save
+
+    assert_not_predicate c, :persisted?
+    assert_not_predicate c, :valid?
+  end
+
   def test_parent_should_save_children_record_with_foreign_key_validation_set_in_before_save_callback
     company = NewlyContractedCompany.new(name: "test")
 
@@ -1149,34 +1176,6 @@ class TestDefaultAutosaveAssociationOnNewRecord < ActiveRecord::TestCase
     post.save!
 
     assert_equal 1, post.categories.reload.length
-  end
-
-  FamilyLoadingMiddleAndThroughRecordsBeforeSave = Class.new(Family) do
-    before_save do
-      family_trees.map(&:member) + members
-    end
-  end
-
-  def test_autosave_new_record_with_hmt_and_middle_record_built_by_parent
-    family = FamilyLoadingMiddleAndThroughRecordsBeforeSave.new
-    family_tree = family.family_trees.build
-    family_tree.build_member
-    family.save!
-    family.reload
-
-    assert_equal 1, family.family_trees.size
-    assert_equal 1, family.members.size
-  end
-
-  def test_autosave_new_record_with_hmt_and_middle_record_built_by_through_record
-    family = FamilyLoadingMiddleAndThroughRecordsBeforeSave.new
-    member = family.members.build
-    family.family_trees.build(member: member)
-    family.save!
-    family.reload
-
-    assert_equal 1, family.family_trees.size
-    assert_equal 1, family.members.size
   end
 end
 
@@ -1521,7 +1520,7 @@ class TestDestroyAsPartOfAutosaveAssociation < ActiveRecord::TestCase
     assert_predicate @pirate, :valid?
   end
 
-  def test_should_skip_validation_on_habtm_if_persisted_and_unchanged
+  def test_should_be_valid_on_habtm_if_persisted_and_unchanged
     parrot = @pirate.parrots.create!(name: "parrots_1")
     parrot.update_column(:name, "")
     parrot.reload
@@ -1530,6 +1529,73 @@ class TestDestroyAsPartOfAutosaveAssociation < ActiveRecord::TestCase
     new_pirate = Pirate.new(catchphrase: "Arr")
     new_pirate.parrots = @pirate.parrots
     new_pirate.save!
+  end
+
+  def test_should_be_invalid_on_habtm_when_any_record_in_the_association_chain_is_invalid_and_was_changed
+    treasure = @pirate.treasures.create!(name: "gold")
+    estimate = treasure.price_estimates.create!(price: 1)
+    estimate.update_columns(price: "not a number")
+
+    assert_not_predicate estimate, :valid?
+
+    treasures = @pirate.treasures.eager_load(:price_estimates).to_a
+    treasures.first.price_estimates.first.price = "not a price"
+    new_pirate = Pirate.new(
+      catchphrase: "Arr",
+      treasures: treasures,
+    )
+
+    assert_raises(ActiveRecord::RecordInvalid) do
+      new_pirate.save!
+    end
+    assert_equal(["Treasures is invalid"], new_pirate.errors.full_messages)
+  end
+
+  def test_should_be_invalid_on_habtm_when_any_record_in_the_association_chain_is_invalid_and_was_changed_with_autosave
+    super_pirate = Class.new(Pirate) do
+      self.table_name = "pirates"
+      has_many :great_treasures, class_name: "Treasure", foreign_key: "looter_id", autosave: true
+
+      def self.name
+        "SuperPirate"
+      end
+    end
+    @pirate = super_pirate.create(catchphrase: "Don' botharrr talkin' like one, savvy?")
+    treasure = @pirate.great_treasures.create!(name: "gold")
+    estimate = treasure.price_estimates.create!(price: 1)
+    estimate.update_columns(price: "not a number")
+
+    assert_not_predicate estimate, :valid?
+
+    treasures = @pirate.great_treasures.eager_load(:price_estimates).to_a
+    treasures.first.price_estimates.first.price = "not a price"
+    new_pirate = super_pirate.new(
+      catchphrase: "Arr",
+      great_treasures: treasures,
+    )
+
+    assert_raises(ActiveRecord::RecordInvalid) do
+      new_pirate.save!
+    end
+    assert_equal(["Great treasures price estimates price is not a number"], new_pirate.errors.full_messages)
+  end
+
+  def test_should_be_valid_on_habtm_when_any_record_in_the_association_chain_is_invalid_but_was_not_changed
+    treasure = @pirate.treasures.create!(name: "gold")
+    estimate = treasure.price_estimates.create!(price: 1)
+    estimate.update_columns(price: "not a number")
+
+    assert_not_predicate estimate, :valid?
+
+    treasures = @pirate.treasures.eager_load(:price_estimates).to_a
+    new_pirate = Pirate.new(
+      catchphrase: "Arr",
+      treasures: treasures,
+    )
+
+    assert_nothing_raised do
+      new_pirate.save!
+    end
   end
 
   def test_a_child_marked_for_destruction_should_not_be_destroyed_twice_while_saving_habtm

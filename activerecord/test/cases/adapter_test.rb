@@ -20,7 +20,7 @@ module ActiveRecord
       # the type map is Ractor shareable.
       @connection.tables.each do |table|
         @connection.columns(table).each do |column|
-          assert_ractor_shareable @connection.lookup_cast_type_from_column(column)
+          assert_ractor_shareable @connection.send(:lookup_cast_type, column.sql_type)
         end
       end
     end
@@ -48,11 +48,13 @@ module ActiveRecord
     def test_valid_column
       @connection.native_database_types.each_key do |type|
         assert @connection.valid_type?(type)
+        assert @connection.class.valid_type?(type)
       end
     end
 
     def test_invalid_column
       assert_not @connection.valid_type?(:foobar)
+      assert_not @connection.class.valid_type?(:foobar)
     end
 
     def test_tables
@@ -700,74 +702,77 @@ module ActiveRecord
         assert_predicate @connection, :active?
       end
 
-      test "idempotent SELECT queries are retried and result in a reconnect" do
-        Post.first
+      test "idempotent SELECT queries allow retries" do
+        notifications = capture_notifications("sql.active_record") do
+          assert (a = Author.first)
+          assert Post.where(id: [1, 2]).first
+          assert Post.where(Arel.sql("id IN (1,2)", retryable: true)).first
+          assert Post.find(1)
+          assert Post.find_by(title: "Welcome to the weblog")
+          assert_predicate Post, :exists?
+          a.books.to_a
+          Author.select(:status).joins(:books).group(:status).to_a
+          Author.group(:name).count
+        end.select { |n| n.payload[:name] != "SCHEMA" }
 
-        remote_disconnect @connection
+        assert_equal 9, notifications.length
 
-        assert Post.first
-        assert_predicate @connection, :active?
-
-        remote_disconnect @connection
-
-        assert Post.where(id: [1, 2]).first
-        assert_predicate @connection, :active?
+        notifications.each do |n|
+          assert n.payload[:allow_retry], "#{n.payload[:sql]} was not retryable"
+        end
       end
 
-      test "#find and #find_by queries with known attributes are retried and result in a reconnect" do
-        Post.first
+      test "query cacheable idempotent SELECT queries allow retries" do
+        @connection.enable_query_cache!
 
-        remote_disconnect @connection
+        notifications = capture_notifications("sql.active_record") do
+          assert_not_nil (a = Author.first)
+          assert_not_nil Post.where(id: [1, 2]).first
+          assert Post.where(Arel.sql("id IN (1,2)", retryable: true)).first
+          assert_not_nil Post.find(1)
+          assert_not_nil Post.find_by(title: "Welcome to the weblog")
+          assert_predicate Post, :exists?
+          a.books.to_a
+          Author.select(:status).joins(:books).group(:status).to_a
+          Author.group(:name).count
+        end.select { |n| n.payload[:name] != "SCHEMA" }
 
-        assert Post.find(1)
-        assert_predicate @connection, :active?
+        assert_equal 9, notifications.length
 
-        remote_disconnect @connection
-
-        assert Post.find_by(title: "Welcome to the weblog")
-        assert_predicate @connection, :active?
+        notifications.each do |n|
+          assert n.payload[:allow_retry], "#{n.payload[:sql]} was not retryable"
+        end
+      ensure
+        @connection.disable_query_cache!
       end
 
-      test "#exists? queries are retried and result in a reconnect" do
-        Post.first
+      test "queries containing SQL fragments do not allow retries" do
+        notifications = capture_notifications("sql.active_record") do
+          Post.where("1 = 1").to_a
+          Post.select("title AS custom_title").first
+          Book.find_by("updated_at < ?", 2.weeks.ago)
+        end.select { |n| n.payload[:name] != "SCHEMA" }
 
-        remote_disconnect @connection
+        assert_equal 3, notifications.length
 
-        assert_predicate Post, :exists?
-        assert_predicate @connection, :active?
+        notifications.each do |n|
+          assert_not n.payload[:allow_retry]
+        end
       end
 
-      test "queries containing SQL fragments are not retried" do
-        Post.first
-
-        remote_disconnect @connection
-
-        assert_raises(ActiveRecord::ConnectionFailed) { Post.where("1 = 1").to_a }
-        assert_not_predicate @connection, :active?
-
-        remote_disconnect @connection
-
-        assert_raises(ActiveRecord::ConnectionFailed) { Post.select("title AS custom_title").first }
-        assert_not_predicate @connection, :active?
-
-        remote_disconnect @connection
-
-        assert_raises(ActiveRecord::ConnectionFailed) { Post.find_by("updated_at < ?", 2.weeks.ago) }
-        assert_not_predicate @connection, :active?
-      end
-
-      test "queries containing SQL functions are not retried" do
-        Post.first
-
-        remote_disconnect @connection
-
+      test "queries containing SQL functions do not allow retries" do
         tags_count_attr = Post.arel_table[:tags_count]
         abs_tags_count = Arel::Nodes::NamedFunction.new("ABS", [tags_count_attr])
 
-        assert_raises(ActiveRecord::ConnectionFailed) do
+        notifications = capture_notifications("sql.active_record") do
           Post.where(abs_tags_count.eq(2)).first
+        end.select { |n| n.payload[:name] != "SCHEMA" }
+
+        assert_equal 1, notifications.length
+
+        notifications.each do |n|
+          assert_not n.payload[:allow_retry]
         end
-        assert_not_predicate @connection, :active?
       end
 
       test "transaction restores after remote disconnection" do
@@ -874,6 +879,50 @@ module ActiveRecord
         kill_connection_from_server(conn_id)
 
         @connection.execute("SELECT 1", allow_retry: true)
+      end
+
+      test "disconnect and recover on #configure_connection failure" do
+        connection = ActiveRecord::Base.connection_pool.send(:new_connection)
+
+        failures = [ActiveRecord::ConnectionFailed.new("Oops"), ActiveRecord::ConnectionFailed.new("Oops 2")]
+        connection.singleton_class.define_method(:configure_connection) do
+          if error = failures.pop
+            raise error
+          else
+            super()
+          end
+        end
+        assert_raises ActiveRecord::ConnectionFailed do
+          connection.exec_query("SELECT 1")
+        end
+
+        assert_equal [[1]], connection.exec_query("SELECT 1").rows
+        assert_empty failures
+      ensure
+        connection&.disconnect!
+      end
+
+      test "disconnect and recover on #configure_connection timeout" do
+        connection = ActiveRecord::Base.connection_pool.send(:new_connection)
+
+        slow = [5]
+        connection.singleton_class.define_method(:configure_connection) do
+          if duration = slow.pop
+            sleep duration
+          end
+          super()
+        end
+
+        assert_raises Timeout::Error do
+          Timeout.timeout(0.2) do
+            connection.exec_query("SELECT 1")
+          end
+        end
+
+        assert_equal [[1]], connection.exec_query("SELECT 1").rows
+        assert_empty failures
+      ensure
+        connection&.disconnect!
       end
 
       private

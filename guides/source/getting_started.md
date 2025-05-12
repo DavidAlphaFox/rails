@@ -168,13 +168,22 @@ Rails.
 Hello, Rails!
 -------------
 
-Let's start easy and boot up our Rails server for the first time.
+Let's start easy by creating our application's database and boot up our Rails server for the first time.
 
-In your terminal, run the following command in the `store` directory:
+In your terminal, run the following commands in the `store` directory:
+
+```bash
+$ bin/rails db:create
+```
+
+This will initially create the application's database.
 
 ```bash
 $ bin/rails server
 ```
+
+NOTE: When we run commands inside an application directory, we should use
+`bin/rails`. This makes sure the application's version of Rails is used.
 
 This will start up a web server called Puma that will serve static files and
 your Rails application:
@@ -482,8 +491,7 @@ This generates a `SELECT` SQL query but also adds a `WHERE` clause to filter the
 records that have a `name` matching `"Pants"`. This also returns an
 `ActiveRecord::Relation` because multiple records may have the same name.
 
-We can use `order(name: :asc)` to sort records by name in ascending alphabetical
-order by `name`.
+We can use `order(name: :asc)` to sort records by name in ascending alphabetical order.
 
 ```irb
 store(dev)> Product.order(name: :asc)
@@ -852,7 +860,7 @@ Controllers & Actions
 Now that we've defined routes for Products, let's implement the controller and
 actions to handle requests to these URLs.
 
-This command will generate a `ProductsController with an index action. Since
+This command will generate a `ProductsController` with an index action. Since
 we've already set up routes, we can skip that part of the generator using a
 flag.
 
@@ -1075,8 +1083,8 @@ helpers you can use for generating URLs with Ruby code.
 
 These route prefixes give us helpers like the following:
 
-* `products_path` generates `"/products`"`
-* `products_url` generates `"http://localhost:3000/products`"`
+* `products_path` generates `"/products"`
+* `products_url` generates `"http://localhost:3000/products"`
 * `product_path(1)` generates `"/products/1"`
 * `product_url(1)` generates `"http://localhost:3000/products/1"`
 
@@ -1101,7 +1109,7 @@ Let's refactor this to use these helpers:
 <div id="products">
   <% @products.each do |product| %>
     <div>
-      <%= link_to product.name, product %>
+      <%= link_to product.name, product_path(product.id) %>
     </div>
   <% end %>
 </div>
@@ -1148,7 +1156,7 @@ We can update `app/views/products/index.html.erb` to link to the new action.
 <div id="products">
   <% @products.each do |product| %>
     <div>
-      <%= link_to product.name, product %>
+      <%= link_to product.name, product_path(product.id) %>
     </div>
   <% end %>
 </div>
@@ -1748,7 +1756,7 @@ description in `app/views/products/_form.html.erb` before the submit button.
 
   <div>
     <%= form.label :description, style: "display: block" %>
-    <%= form.rich_text_area :description %>
+    <%= form.rich_textarea :description %>
   </div>
 
   <div>

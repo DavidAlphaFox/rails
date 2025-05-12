@@ -427,6 +427,10 @@ ActiveRecord::Schema.define do
         t.index "(CONCAT_WS(`firm_name`, `name`, _utf8mb4' '))", name: "full_name_index"
       end
     end
+
+    if supports_disabling_indexes?
+      t.index [:firm_id, :client_of], name: "company_disabled_index", enabled: false
+    end
   end
 
   create_table :content, force: true do |t|
@@ -586,6 +590,11 @@ ActiveRecord::Schema.define do
 
   create_table :engines, force: true do |t|
     t.references :car, index: false
+  end
+
+  create_table :enrollments, force: true do |t|
+    t.integer  :program_id
+    t.integer  :member_id
   end
 
   create_table :entrants, force: true do |t|
@@ -1018,6 +1027,16 @@ ActiveRecord::Schema.define do
     t.decimal :discounted_price
   end
 
+  create_table :program_offerings, force: true do |t|
+    t.integer  :club_id
+    t.integer  :program_id
+    t.datetime :start_date
+  end
+
+  create_table :programs, force: true do |t|
+    t.string   :name
+  end
+
   add_check_constraint :products, "price > discounted_price", name: "products_price_check"
 
   create_table :product_types, force: true do |t|
@@ -1174,7 +1193,6 @@ ActiveRecord::Schema.define do
     t.integer :books_count, null: false, default: 0
     t.integer :update_count, null: false, default: 0
     t.index :nick, unique: true
-    t.references :account
   end
 
   create_table :subscriptions, force: true do |t|

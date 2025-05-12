@@ -149,6 +149,7 @@ module ActionController # :nodoc:
       #
       #
       # Built-in unverified request handling methods are:
+      #
       # *   `:exception` - Raises ActionController::InvalidAuthenticityToken
       #     exception.
       # *   `:reset_session` - Resets the session.
@@ -177,6 +178,7 @@ module ActionController # :nodoc:
       #
       #
       # Built-in session token strategies are:
+      #
       # *   `:session` - Store the CSRF token in the session.  Used as default if
       #     `:store` option is not specified.
       # *   `:cookie` - Store the CSRF token in an encrypted cookie.
@@ -466,7 +468,7 @@ module ActionController # :nodoc:
       # *   Does the `X-CSRF-Token` header match the form_authenticity_token?
       #
       def verified_request? # :doc:
-        !protect_against_forgery? || request.get? || request.head? ||
+        request.get? || request.head? || !protect_against_forgery? ||
           (valid_request_origin? && any_authenticity_token_valid?)
       end
 
@@ -505,7 +507,7 @@ module ActionController # :nodoc:
       # Checks the client's masked token to see if it matches the session token.
       # Essentially the inverse of `masked_authenticity_token`.
       def valid_authenticity_token?(session, encoded_masked_token) # :doc:
-        if encoded_masked_token.nil? || encoded_masked_token.empty? || !encoded_masked_token.is_a?(String)
+        if !encoded_masked_token.is_a?(String) || encoded_masked_token.empty?
           return false
         end
 

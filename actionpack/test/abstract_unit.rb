@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require "active_support/testing/strict_warnings"
+require_relative "../../tools/strict_warnings"
 
 $:.unshift File.expand_path("lib", __dir__)
 
@@ -513,22 +513,6 @@ module HeadersAssertions
     header = normalized_join_header(header)
     assert_equal header, expected
   end
-end
-
-class DrivenByRackTest < ActionDispatch::SystemTestCase
-  driven_by :rack_test
-end
-
-class DrivenBySeleniumWithChrome < ActionDispatch::SystemTestCase
-  driven_by :selenium, using: :chrome
-end
-
-class DrivenBySeleniumWithHeadlessChrome < ActionDispatch::SystemTestCase
-  driven_by :selenium, using: :headless_chrome
-end
-
-class DrivenBySeleniumWithHeadlessFirefox < ActionDispatch::SystemTestCase
-  driven_by :selenium, using: :headless_firefox
 end
 
 require_relative "../../tools/test_common"

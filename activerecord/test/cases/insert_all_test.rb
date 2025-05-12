@@ -185,6 +185,16 @@ class InsertAllTest < ActiveRecord::TestCase
     end
   end
 
+  def test_insert_all_only_applies_last_value_when_given_duplicate_identifiers
+    skip unless supports_insert_on_duplicate_skip?
+
+    Book.insert_all [
+      { id: 111, name: "expected_new_name" },
+      { id: 111, name: "unexpected_new_name" }
+    ]
+    assert_equal "expected_new_name", Book.find(111).name
+  end
+
   def test_skip_duplicates_strategy_does_not_secretly_upsert
     skip unless supports_insert_on_duplicate_skip?
 
@@ -397,6 +407,36 @@ class InsertAllTest < ActiveRecord::TestCase
     Book.upsert_all [{ id: 1, name: "New edition" }], unique_by: :id
 
     assert_equal "New edition", Book.find(1).name
+  end
+
+  def test_upsert_all_implicitly_sets_primary_keys_when_nil
+    assert_difference "Book.count", 2 do
+      Book.upsert_all [
+        { id: 1, name: "New edition" },
+        { id: nil, name: "New edition 2" },
+        { id: nil, name: "New edition 3" },
+      ]
+    end
+
+    assert_equal "New edition", Book.find(1).name
+  end
+
+  def test_insert_all_implicitly_sets_primary_keys_when_nil
+    assert_difference "Book.count", 1 do
+      Book.insert_all [ { id: nil, name: "New edition" } ]
+    end
+  end
+
+  def test_upsert_all_only_applies_last_value_when_given_duplicate_identifiers
+    skip unless supports_insert_on_duplicate_update? && !current_adapter?(:PostgreSQLAdapter)
+
+    Book.create!(id: 112, name: "original_name")
+
+    Book.upsert_all [
+      { id: 112, name: "unexpected_new_name" },
+      { id: 112, name: "expected_new_name" }
+    ]
+    assert_equal "expected_new_name", Book.find(112).name
   end
 
   def test_upsert_all_does_notupdates_existing_record_by_when_there_is_no_key
@@ -860,6 +900,122 @@ class InsertAllTest < ActiveRecord::TestCase
       end
     ensure
       Book.table_name = "books"
+    end
+  end
+
+  def test_insert_all_with_unpersisted_records_triggers_deprecation
+    skip unless supports_insert_on_duplicate_skip?
+
+    author = Author.create!(name: "Rafael")
+    author.books.build(title: "Unpersisted Book")
+
+    assert_deprecated(ActiveRecord.deprecator) do
+      author.books.insert({ title: "New Book" })
+    end
+
+    author.books.load
+    assert_includes author.books.pluck(:title), "Unpersisted Book"
+  end
+
+  def test_insert_all_without_unpersisted_records_has_no_deprecation
+    skip unless supports_insert_on_duplicate_skip?
+
+    author = Author.create!(name: "Rafael")
+
+    assert_not_deprecated(ActiveRecord.deprecator) do
+      author.books.insert_all([{ title: "New Book" }])
+    end
+  end
+
+  def test_insert_with_unpersisted_records_triggers_deprecation
+    skip unless supports_insert_on_duplicate_skip?
+
+    author = Author.create!(name: "Rafael")
+    author.books.build(title: "Unpersisted Book")
+
+    assert_deprecated(ActiveRecord.deprecator) do
+      author.books.insert({ title: "New Book" })
+    end
+
+    author.books.load
+    assert_includes author.books.pluck(:title), "Unpersisted Book"
+  end
+
+  def test_insert_without_unpersisted_records_has_no_deprecation
+    skip unless supports_insert_on_duplicate_skip?
+
+    author = Author.create!(name: "Rafael")
+
+    assert_not_deprecated(ActiveRecord.deprecator) do
+      author.books.insert({ title: "New Book" })
+    end
+  end
+
+  def test_insert_all_bang_with_unpersisted_record_triggers_deprecation
+    author = Author.create!(name: "Rafael")
+    author.books.build(title: "Unpersisted Book")
+
+    assert_deprecated(ActiveRecord.deprecator) do
+      author.books.insert_all!([{ title: "New Book" }])
+    end
+
+    author.books.load
+    assert_includes author.books.pluck(:title), "Unpersisted Book"
+  end
+
+  def test_insert_all_bang_without_unpersisted_records_has_no_deprecation
+    author = Author.create!(name: "Rafael")
+
+    assert_not_deprecated(ActiveRecord.deprecator) do
+      author.books.insert_all!([{ title: "New Book" }])
+    end
+  end
+
+  def test_upsert_all_with_unpersisted_record_triggers_deprecation
+    skip unless supports_insert_on_duplicate_update?
+
+    author = Author.create!(name: "Rafael")
+    author.books.build(title: "Unpersisted Book")
+
+    assert_deprecated(ActiveRecord.deprecator) do
+      author.books.upsert_all([{ title: "New Book" }])
+    end
+
+    author.books.load
+    assert_includes author.books.pluck(:title), "Unpersisted Book"
+  end
+
+  def test_upsert_all_without_unpersisted_records_has_no_deprecation
+    skip unless supports_insert_on_duplicate_update?
+
+    author = Author.create!(name: "Rafael")
+
+    assert_not_deprecated(ActiveRecord.deprecator) do
+      author.books.upsert_all([{ title: "New Book" }])
+    end
+  end
+
+  def test_upsert_with_unpersisted_record_triggers_deprecation
+    skip unless supports_insert_on_duplicate_update?
+
+    author = Author.create!(name: "Rafael")
+    author.books.build(title: "Unpersisted Book")
+
+    assert_deprecated(ActiveRecord.deprecator) do
+      author.books.upsert({ title: "New Book" })
+    end
+
+    author.books.load
+    assert_includes author.books.pluck(:title), "Unpersisted Book"
+  end
+
+  def test_upsert_without_unpersisted_records_has_no_deprecation
+    skip unless supports_insert_on_duplicate_update?
+
+    author = Author.create!(name: "Rafael")
+
+    assert_not_deprecated(ActiveRecord.deprecator) do
+      author.books.upsert({ title: "New Book" })
     end
   end
 

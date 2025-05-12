@@ -268,7 +268,7 @@ module ActiveRecord
       assert_equal 3, nb_inner_join, "Wrong amount of INNER JOIN in query"
 
       # using `\W` as the column separator
-      assert queries.any? { |sql| %r[INNER\s+JOIN\s+#{Regexp.escape(Author.quoted_table_name)}\s+\Wauthors_categorizations\W]i.match?(sql) }, "Should be aliasing the child INNER JOINs in query"
+      assert queries.any? { |sql| %r[INNER\s+JOIN\s+#{Regexp.escape(Author.quoted_table_name)}\s+(AS\s+)?\Wauthors_categorizations\W]i.match?(sql) }, "Should be aliasing the child INNER JOINs in query"
     end
 
     def test_relation_with_merged_joins_aliased_works
@@ -445,7 +445,19 @@ module ActiveRecord
       end
     end
 
-    test "runs queries when using pick with expression column and empty IN" do
+    test "no queries when using pick with non-aggregate expression and empty IN" do
+      assert_queries_count(0) do
+        assert_nil Post.where(id: []).pick(Arel.sql("id"))
+      end
+    end
+
+    test "no queries when using pick with any non-aggregate expression and empty IN" do
+      assert_queries_count(0) do
+        assert_nil Post.where(id: []).pick(Arel.sql("id"), Arel.sql("LENGTH(title)"))
+      end
+    end
+
+    test "runs queries when using pick with aggregate expression despite empty IN" do
       assert_queries_count(1) do
         assert_equal 0, Post.where(id: []).pick(Arel.sql("COUNT(*)"))
       end

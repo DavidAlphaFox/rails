@@ -463,9 +463,12 @@ module ActiveRecord
       end
 
       def possible_aggregation?(column_names)
-        column_names.any? do |column_name|
-          Arel.arel_node?(column_name) ||
-            (column_name.is_a?(String) && column_name.include?("("))
+        column_names.all? do |column_name|
+          if column_name.is_a?(String)
+            column_name.include?("(")
+          else
+            Arel.arel_node?(column_name)
+          end
         end
       end
 
@@ -494,7 +497,11 @@ module ActiveRecord
         end
 
         query_result = if relation.where_clause.contradiction?
-          ActiveRecord::Result.empty
+          if @async
+            FutureResult.wrap(ActiveRecord::Result.empty)
+          else
+            ActiveRecord::Result.empty
+          end
         else
           skip_query_cache_if_necessary do
             model.with_connection do |c|
@@ -538,7 +545,7 @@ module ActiveRecord
           column = relation.aggregate_column(column_name)
           column_alias = column_alias_tracker.alias_for("#{operation} #{column_name.to_s.downcase}")
           select_value = operation_over_aggregate_column(column, operation, distinct)
-          select_value.as(model.adapter_class.quote_column_name(column_alias))
+          select_value = select_value.as(model.adapter_class.quote_column_name(column_alias))
 
           select_values = [select_value]
           select_values += self.select_values unless having_clause.empty?

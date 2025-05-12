@@ -8,7 +8,6 @@
 #
 # It is also good to know what is the bare minimum to get
 # Rails booted up.
-require "active_support/testing/strict_warnings"
 require "fileutils"
 require "shellwords"
 
@@ -539,6 +538,9 @@ module TestHelpers
             adapter: mysql2
             pool: 5
             username: root
+          <% if ENV['MYSQL_CODESPACES'] %>
+            password: 'root'
+          <% end %>
           <% if ENV['MYSQL_HOST'] %>
             host: <%= ENV['MYSQL_HOST'] %>
           <% end %>
@@ -562,6 +564,9 @@ module TestHelpers
             adapter: mysql2
             pool: 5
             username: root
+          <% if ENV['MYSQL_CODESPACES'] %>
+            password: 'root'
+          <% end %>
           <% if ENV['MYSQL_HOST'] %>
             host: <%= ENV['MYSQL_HOST'] %>
           <% end %>

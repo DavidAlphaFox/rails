@@ -58,9 +58,9 @@ module ActiveRecord
         #   semantically equal to be considered different.
         #   For instance two hashes with the same keys and values but a different order have a
         #   different serialized representation, but are semantically equal once deserialized.
-        #   If set to +true+ the comparison will be done on the deserialized object. This options
-        #   should only be enabled if the +type+ is known to have a proper +==+ method that deeply
-        #   compare the objects.
+        #   If set to +true+ the comparison will be done on the deserialized object.
+        #   This options should only be enabled if the +type+ is known to have
+        #   a proper <tt>==</tt> method that deeply compare the objects.
         # * +yaml+ - Optional. Yaml specific options. The allowed config is:
         #   * +:permitted_classes+ - +Array+ with the permitted classes.
         #   * +:unsafe_load+ - Unsafely load YAML blobs, allow YAML to load any class.
@@ -219,7 +219,10 @@ module ActiveRecord
             # When ::JSON is used, force it to go through the Active Support JSON encoder
             # to ensure special objects (e.g. Active Record models) are dumped correctly
             # using the #as_json hook.
-            coder = Coders::JSON if coder == ::JSON
+
+            if coder == ::JSON || coder == Coders::JSON
+              coder = Coders::JSON.new
+            end
 
             if coder == ::YAML || coder == Coders::YAMLColumn
               Coders::YAMLColumn.new(attr_name, type, **(yaml || {}))

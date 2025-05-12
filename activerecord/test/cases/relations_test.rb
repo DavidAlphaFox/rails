@@ -26,6 +26,7 @@ require "models/reader"
 require "models/category"
 require "models/categorization"
 require "models/edge"
+require "models/wheel"
 require "models/subscriber"
 require "models/cpk"
 
@@ -368,6 +369,19 @@ class RelationTest < ActiveRecord::TestCase
     assert_raises(ActiveRecord::IrreversibleOrderError) do
       Edge.all.reverse_order
     end
+  end
+
+  def test_default_reverse_order_on_table_without_primary_key_with_implicit_order_column
+    ordered_edge = Class.new(Edge) do
+      self.implicit_order_column = "source_id"
+    end
+
+    ordered_edge.delete_all
+
+    edge_1 = ordered_edge.create!(source_id: 1, sink_id: 2)
+    edge_2 = ordered_edge.create!(source_id: 2, sink_id: 3)
+    assert_equal edge_1.source_id, ordered_edge.all.first.source_id
+    assert_equal edge_2.source_id, ordered_edge.all.reverse_order.first.source_id
   end
 
   def test_order_with_hash_and_symbol_generates_the_same_sql
@@ -1578,6 +1592,33 @@ class RelationTest < ActiveRecord::TestCase
 
     assert_equal subscriber, Subscriber.create_or_find_by(nick: "bob")
     assert_not_equal subscriber, Subscriber.create_or_find_by(nick: "cat")
+  end
+
+  def test_create_or_find_by_rollbacks_a_transaction
+    assert_no_difference(-> { Car.count }) do
+      car = BrokenCar.create_or_find_by(name: "Civic")
+
+      assert_instance_of(BrokenCar, car)
+      assert_not_predicate(car, :persisted?)
+    end
+  end
+
+  def test_create_or_find_by_bang_rollbacks_a_transaction
+    assert_no_difference(-> { Car.count }) do
+      car = BrokenCar.create_or_find_by!(name: "Civic")
+
+      assert_instance_of(BrokenCar, car)
+      assert_not_predicate(car, :persisted?)
+    end
+  end
+
+  def test_create_or_find_by_on_a_collections_rollbacks_a_transaction_when_owner_is_not_persisted
+    car = BrokenCar.create(name: "Civic")
+    assert_not_predicate(car, :persisted?)
+
+    assert_raises(ActiveRecord::RecordNotSaved) do
+      car.wheels.create_or_find_by!(size: 1500)
+    end
   end
 
   def test_create_or_find_by_with_block

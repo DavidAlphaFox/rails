@@ -13,6 +13,14 @@ class AuthenticationGeneratorTest < Rails::Generators::TestCase
       class ApplicationController < ActionController::Base
       end
     RUBY
+    FileUtils.mkdir_p("#{destination_root}/test")
+    File.write("#{destination_root}/test/test_helper.rb", <<~RUBY)
+      require "rails/test_help"
+      module ActiveSupport
+        class TestCase
+        end
+      end
+    RUBY
 
     copy_gemfile
 
@@ -52,6 +60,13 @@ class AuthenticationGeneratorTest < Rails::Generators::TestCase
 
     assert_file "test/models/user_test.rb"
     assert_file "test/fixtures/users.yml"
+    assert_file "test/controllers/sessions_controller_test.rb"
+    assert_file "test/controllers/passwords_controller_test.rb"
+
+    assert_file "test/test_helper.rb" do |content|
+      assert_match(/session_test_helper/, content)
+      assert_match(/SessionTestHelper/, content)
+    end
   end
 
   def test_authentication_generator_without_bcrypt_in_gemfile
@@ -61,7 +76,7 @@ class AuthenticationGeneratorTest < Rails::Generators::TestCase
 
     run_generator_instance
 
-    assert_includes @bundle_commands, [:bundle, "add bcrypt", { capture: true }]
+    assert_includes @bundle_commands, ["add bcrypt", {}, { quiet: true }]
   end
 
   def test_authentication_generator_with_api_flag
@@ -96,6 +111,11 @@ class AuthenticationGeneratorTest < Rails::Generators::TestCase
 
     assert_file "test/models/user_test.rb"
     assert_file "test/fixtures/users.yml"
+
+    assert_file "test/test_helper.rb" do |content|
+      assert_match(/session_test_helper/, content)
+      assert_match(/SessionTestHelper/, content)
+    end
   end
 
   def test_model_test_is_skipped_if_test_framework_is_given
@@ -118,22 +138,40 @@ class AuthenticationGeneratorTest < Rails::Generators::TestCase
     ActionCable.const_set(:Engine, old_value)
   end
 
+  def test_authentication_generator_without_action_mailer
+    old_value = ActionMailer.const_get(:Railtie)
+    ActionMailer.send(:remove_const, :Railtie)
+    generator([destination_root])
+    run_generator_instance
+
+    assert_no_file "app/mailers/application_mailer.rb"
+    assert_no_file "app/mailers/passwords_mailer.rb"
+    assert_no_file "app/views/passwords_mailer/reset.html.erb"
+    assert_no_file "app/views/passwords_mailer/reset.text.erb"
+    assert_no_file "test/mailers/previews/passwords_mailer_preview.rb"
+
+    assert_file "app/controllers/passwords_controller.rb" do |content|
+      assert_no_match(/def create\n    end/, content)
+      assert_no_match(/rate_limit/, content)
+    end
+  ensure
+    ActionMailer.const_set(:Railtie, old_value)
+  end
+
   private
     def run_generator_instance
-      commands = []
-      command_stub ||= -> (command, *args) { commands << [command, *args] }
+      @bundle_commands = []
+      command_stub ||= -> (command, *args) { @bundle_commands << [command, *args] }
 
       @rails_commands = []
       @rails_command_stub ||= -> (command, *_) { @rails_commands << command }
 
       content = nil
-      generator.stub(:execute_command, command_stub) do
+      generator.stub(:bundle_command, command_stub) do
         generator.stub(:rails_command, @rails_command_stub) do
           content = super
         end
       end
-
-      @bundle_commands = commands.filter { |command, _| command == :bundle }
 
       content
     end

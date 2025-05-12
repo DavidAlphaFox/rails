@@ -127,7 +127,9 @@ module Rails
         template "routes.rb" unless options[:update]
         template "application.rb"
         template "environment.rb"
+        template "bundler-audit.yml"
         template "cable.yml" unless options[:update] || options[:skip_action_cable]
+        template "ci.rb"
         template "puma.rb"
         template "storage.yml" unless options[:update] || skip_active_storage?
 
@@ -140,6 +142,8 @@ module Rails
     def config_when_updating
       action_cable_config_exist       = File.exist?("config/cable.yml")
       active_storage_config_exist     = File.exist?("config/storage.yml")
+      ci_config_exist                 = File.exist?("config/ci.rb")
+      bundle_audit_config_exist       = File.exist?("config/bundler-audit.yml")
       rack_cors_config_exist          = File.exist?("config/initializers/cors.rb")
       assets_config_exist             = File.exist?("config/initializers/assets.rb")
       asset_app_stylesheet_exist      = File.exist?("app/assets/stylesheets/application.css")
@@ -157,6 +161,10 @@ module Rails
         template "config/storage.yml"
       end
 
+      if !ci_config_exist
+        template "config/ci.rb"
+      end
+
       if skip_asset_pipeline? && !assets_config_exist
         remove_file "config/initializers/assets.rb"
       end
@@ -167,6 +175,10 @@ module Rails
 
       unless rack_cors_config_exist
         remove_file "config/initializers/cors.rb"
+      end
+
+      if !bundle_audit_config_exist
+        template "config/bundler-audit.yml"
       end
 
       if options[:api]
@@ -305,11 +317,18 @@ module Rails
             :skip_active_job,
             :skip_active_storage,
             :skip_bootsnap,
+            :skip_brakeman,
+            :skip_ci,
             :skip_dev_gems,
+            :skip_docker,
             :skip_hotwire,
             :skip_javascript,
             :skip_jbuilder,
+            :skip_kamal,
+            :skip_rubocop,
+            :skip_solid,
             :skip_system_test,
+            :skip_thruster
           ],
           api: [
             :skip_asset_pipeline,
@@ -563,7 +582,6 @@ module Rails
       public_task :apply_rails_template
       public_task :run_bundle
       public_task :add_bundler_platforms
-      public_task :generate_bundler_binstub
       public_task :run_javascript
       public_task :run_hotwire
       public_task :run_css

@@ -1,13 +1,4 @@
 GIT
-  remote: https://github.com/nahi/httpclient.git
-  revision: d57cc6d5ffee1b566b5c189fe6dc8cc89570b812
-  branch: master
-  specs:
-    httpclient (2.8.3)
-      mutex_m
-      webrick
-
-GIT
   remote: https://github.com/rails/sdoc.git
   revision: cd75e36ce2d1acb66734c1390ffe33aa05479380
   branch: main
@@ -171,6 +162,9 @@ GEM
     brakeman (7.0.0)
       racc
     builder (3.3.0)
+    bundler-audit (0.9.2)
+      bundler (>= 1.2.0, < 3)
+      thor (~> 1.0)
     bunny (2.23.0)
       amq-protocol (~> 2.3, >= 2.3.1)
       sorted_set (~> 1, >= 1.0.2)
@@ -241,8 +235,14 @@ GEM
     faraday_middleware (1.2.1)
       faraday (~> 1.0)
     ffi (1.17.1)
+    ffi (1.17.1-aarch64-linux-gnu)
+    ffi (1.17.1-aarch64-linux-musl)
+    ffi (1.17.1-arm-linux-gnu)
+    ffi (1.17.1-arm-linux-musl)
+    ffi (1.17.1-arm64-darwin)
     ffi (1.17.1-x86_64-darwin)
     ffi (1.17.1-x86_64-linux-gnu)
+    ffi (1.17.1-x86_64-linux-musl)
     fugit (1.11.1)
       et-orbi (~> 1, >= 1.2.11)
       raabro (~> 1.4)
@@ -279,6 +279,12 @@ GEM
     google-protobuf (4.29.3)
       bigdecimal
       rake (>= 13)
+    google-protobuf (4.29.3-aarch64-linux)
+      bigdecimal
+      rake (>= 13)
+    google-protobuf (4.29.3-arm64-darwin)
+      bigdecimal
+      rake (>= 13)
     google-protobuf (4.29.3-x86_64-darwin)
       bigdecimal
       rake (>= 13)
@@ -294,6 +300,8 @@ GEM
       os (>= 0.9, < 2.0)
       signet (>= 0.16, < 2.a)
     hashdiff (1.1.2)
+    httpclient (2.9.0)
+      mutex_m
     i18n (1.14.6)
       concurrent-ruby (~> 1.0)
     image_processing (1.13.0)
@@ -313,7 +321,7 @@ GEM
     jmespath (1.6.2)
     jsbundling-rails (1.3.1)
       railties (>= 6.0.0)
-    json (2.9.1)
+    json (2.10.2)
     jwt (2.10.1)
       base64
     kamal (2.4.0)
@@ -336,6 +344,7 @@ GEM
       addressable (~> 2.8)
       childprocess (~> 5.0)
     libxml-ruby (5.0.3)
+    lint_roller (1.1.0)
     listen (3.9.0)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
@@ -396,16 +405,28 @@ GEM
       net-ssh (>= 2.6.5, < 8.0.0)
     net-sftp (4.0.0)
       net-ssh (>= 5.0.0, < 8.0.0)
-    net-smtp (0.5.0)
+    net-smtp (0.5.1)
       net-protocol
     net-ssh (7.3.0)
     nio4r (2.7.4)
     nokogiri (1.18.1)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
+    nokogiri (1.18.1-aarch64-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.18.1-aarch64-linux-musl)
+      racc (~> 1.4)
+    nokogiri (1.18.1-arm-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.18.1-arm-linux-musl)
+      racc (~> 1.4)
+    nokogiri (1.18.1-arm64-darwin)
+      racc (~> 1.4)
     nokogiri (1.18.1-x86_64-darwin)
       racc (~> 1.4)
     nokogiri (1.18.1-x86_64-linux-gnu)
+      racc (~> 1.4)
+    nokogiri (1.18.1-x86_64-linux-musl)
       racc (~> 1.4)
     os (1.1.4)
     ostruct (0.6.1)
@@ -421,7 +442,7 @@ GEM
       activesupport (>= 7.0.0)
       rack
       railties (>= 7.0.0)
-    psych (5.2.2)
+    psych (5.2.5)
       date
       stringio
     public_suffix (6.0.1)
@@ -460,10 +481,10 @@ GEM
     rbtree (0.4.6)
     rdoc (6.9.1)
       psych (>= 4.0.0)
-    redcarpet (3.2.3)
+    redcarpet (3.6.1)
     redis (5.3.0)
       redis-client (>= 0.22.0)
-    redis-client (0.23.1)
+    redis-client (0.24.0)
       connection_pool
     redis-namespace (1.11.0)
       redis (>= 4)
@@ -487,33 +508,39 @@ GEM
     retriable (3.1.2)
     rexml (3.4.0)
     rouge (4.5.1)
-    rubocop (1.70.0)
+    rubocop (1.72.2)
       json (~> 2.3)
-      language_server-protocol (>= 3.17.0)
+      language_server-protocol (~> 3.17.0.2)
+      lint_roller (~> 1.1.0)
       parallel (~> 1.10)
       parser (>= 3.3.0.2)
       rainbow (>= 2.2.2, < 4.0)
       regexp_parser (>= 2.9.3, < 3.0)
-      rubocop-ast (>= 1.36.2, < 2.0)
+      rubocop-ast (>= 1.38.0, < 2.0)
       ruby-progressbar (~> 1.7)
       unicode-display_width (>= 2.4.0, < 4.0)
-    rubocop-ast (1.37.0)
+    rubocop-ast (1.38.1)
       parser (>= 3.3.1.0)
-    rubocop-md (1.2.4)
-      rubocop (>= 1.45)
-    rubocop-minitest (0.36.0)
-      rubocop (>= 1.61, < 2.0)
-      rubocop-ast (>= 1.31.1, < 2.0)
-    rubocop-packaging (0.5.2)
-      rubocop (>= 1.33, < 2.0)
-    rubocop-performance (1.23.1)
-      rubocop (>= 1.48.1, < 2.0)
-      rubocop-ast (>= 1.31.1, < 2.0)
-    rubocop-rails (2.28.0)
+    rubocop-md (2.0.0)
+      lint_roller (~> 1.1)
+      rubocop (>= 1.72.1)
+    rubocop-minitest (0.37.1)
+      lint_roller (~> 1.1)
+      rubocop (>= 1.72.1, < 2.0)
+      rubocop-ast (>= 1.38.0, < 2.0)
+    rubocop-packaging (0.6.0)
+      lint_roller (~> 1.1.0)
+      rubocop (>= 1.72.1, < 2.0)
+    rubocop-performance (1.24.0)
+      lint_roller (~> 1.1)
+      rubocop (>= 1.72.1, < 2.0)
+      rubocop-ast (>= 1.38.0, < 2.0)
+    rubocop-rails (2.30.3)
       activesupport (>= 4.2.0)
+      lint_roller (~> 1.1)
       rack (>= 1.1)
-      rubocop (>= 1.52.0, < 2.0)
-      rubocop-ast (>= 1.31.1, < 2.0)
+      rubocop (>= 1.72.1, < 2.0)
+      rubocop-ast (>= 1.38.0, < 2.0)
     rubocop-rails-omakase (1.0.0)
       rubocop
       rubocop-minitest
@@ -530,12 +557,24 @@ GEM
     sass-embedded (1.83.4)
       google-protobuf (~> 4.29)
       rake (>= 13)
+    sass-embedded (1.83.4-aarch64-linux-gnu)
+      google-protobuf (~> 4.29)
+    sass-embedded (1.83.4-aarch64-linux-musl)
+      google-protobuf (~> 4.29)
+    sass-embedded (1.83.4-arm-linux-gnueabihf)
+      google-protobuf (~> 4.29)
+    sass-embedded (1.83.4-arm-linux-musleabihf)
+      google-protobuf (~> 4.29)
+    sass-embedded (1.83.4-arm64-darwin)
+      google-protobuf (~> 4.29)
     sass-embedded (1.83.4-x86_64-darwin)
       google-protobuf (~> 4.29)
     sass-embedded (1.83.4-x86_64-linux-gnu)
       google-protobuf (~> 4.29)
+    sass-embedded (1.83.4-x86_64-linux-musl)
+      google-protobuf (~> 4.29)
     securerandom (0.4.1)
-    selenium-webdriver (4.27.0)
+    selenium-webdriver (4.32.0)
       base64 (~> 0.2)
       logger (~> 1.4)
       rexml (~> 3.2, >= 3.2.5)
@@ -544,11 +583,12 @@ GEM
     serverengine (2.0.7)
       sigdump (~> 0.2.2)
     set (1.1.1)
-    sidekiq (7.3.7)
-      connection_pool (>= 2.3.0)
-      logger
-      rack (>= 2.2.4)
-      redis-client (>= 0.22.2)
+    sidekiq (8.0.2)
+      connection_pool (>= 2.5.0)
+      json (>= 2.9.0)
+      logger (>= 1.6.2)
+      rack (>= 3.1.0)
+      redis-client (>= 0.23.2)
     sigdump (0.2.5)
     signet (0.19.0)
       addressable (~> 2.8)
@@ -596,8 +636,14 @@ GEM
       sprockets (>= 3.0.0)
     sqlite3 (2.5.0)
       mini_portile2 (~> 2.8.0)
+    sqlite3 (2.5.0-aarch64-linux-gnu)
+    sqlite3 (2.5.0-aarch64-linux-musl)
+    sqlite3 (2.5.0-arm-linux-gnu)
+    sqlite3 (2.5.0-arm-linux-musl)
+    sqlite3 (2.5.0-arm64-darwin)
     sqlite3 (2.5.0-x86_64-darwin)
     sqlite3 (2.5.0-x86_64-linux-gnu)
+    sqlite3 (2.5.0-x86_64-linux-musl)
     sshkit (1.23.2)
       base64
       net-scp (>= 1.1.2)
@@ -607,19 +653,24 @@ GEM
     stackprof (0.2.27)
     stimulus-rails (1.3.4)
       railties (>= 6.0.0)
-    stringio (3.1.2)
+    stringio (3.1.7)
     sucker_punch (3.2.0)
       concurrent-ruby (~> 1.0)
     tailwindcss-rails (3.2.0)
       railties (>= 7.0.0)
       tailwindcss-ruby
     tailwindcss-ruby (3.4.17)
+    tailwindcss-ruby (3.4.17-aarch64-linux)
+    tailwindcss-ruby (3.4.17-arm-linux)
+    tailwindcss-ruby (3.4.17-arm64-darwin)
     tailwindcss-ruby (3.4.17-x86_64-darwin)
     tailwindcss-ruby (3.4.17-x86_64-linux)
     terser (1.2.4)
       execjs (>= 0.3.0, < 3)
     thor (1.3.2)
     thruster (0.1.10)
+    thruster (0.1.10-aarch64-linux)
+    thruster (0.1.10-arm64-darwin)
     thruster (0.1.10-x86_64-darwin)
     thruster (0.1.10-x86_64-linux)
     tilt (2.6.0)
@@ -647,7 +698,7 @@ GEM
       activemodel (>= 6.0.0)
       bindex (>= 0.4.0)
       railties (>= 6.0.0)
-    webmock (3.24.0)
+    webmock (3.25.0)
       addressable (>= 2.8.0)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
@@ -667,9 +718,17 @@ GEM
     zeitwerk (2.7.1)
 
 PLATFORMS
+  aarch64-linux
+  aarch64-linux-gnu
+  aarch64-linux-musl
+  arm-linux-gnu
+  arm-linux-musl
+  arm64-darwin
   ruby
   x86_64-darwin
   x86_64-linux
+  x86_64-linux-gnu
+  x86_64-linux-musl
 
 DEPENDENCIES
   aws-sdk-s3
@@ -679,6 +738,7 @@ DEPENDENCIES
   bcrypt (~> 3.1.11)
   bootsnap (>= 1.4.4)
   brakeman
+  bundler-audit
   capybara (>= 3.39)
   connection_pool
   cssbundling-rails
@@ -686,7 +746,6 @@ DEPENDENCIES
   dartsass-rails
   debug (>= 1.1.0)
   google-cloud-storage (~> 1.11)
-  httpclient!
   image_processing (~> 1.2)
   importmap-rails (>= 1.2.3)
   jbuilder
@@ -714,7 +773,7 @@ DEPENDENCIES
   rails!
   rake (>= 13)
   rdoc (< 6.10)
-  redcarpet (~> 3.2.3)
+  redcarpet (~> 3.6.1)
   redis (>= 4.0.1)
   redis-namespace
   releaser!
@@ -722,7 +781,7 @@ DEPENDENCIES
   resque-scheduler
   rexml
   rouge
-  rubocop (>= 1.25.1)
+  rubocop (< 1.73)
   rubocop-md
   rubocop-minitest
   rubocop-packaging
@@ -732,7 +791,7 @@ DEPENDENCIES
   rubyzip (~> 2.0)
   sdoc!
   selenium-webdriver (>= 4.20.0)
-  sidekiq
+  sidekiq (!= 8.0.3)
   sneakers
   solid_cable
   solid_cache
@@ -758,4 +817,4 @@ DEPENDENCIES
   websocket-client-simple
 
 BUNDLED WITH
-   2.5.16
+   2.6.2

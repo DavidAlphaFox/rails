@@ -4,15 +4,13 @@ require_relative "../../abstract_unit"
 require "active_support/cache"
 require_relative "../behaviors"
 
-class MemoryStoreTest < ActiveSupport::TestCase
-  def setup
-    @cache = lookup_store(expires_in: 60)
-  end
-
+class StoreTest < ActiveSupport::TestCase
   def lookup_store(options = {})
     ActiveSupport::Cache.lookup_store(:memory_store, options)
   end
+end
 
+class MemoryStoreTest < StoreTest
   include CacheStoreBehavior
   include CacheStoreVersionBehavior
   include CacheStoreCoderBehavior
@@ -22,6 +20,10 @@ class MemoryStoreTest < ActiveSupport::TestCase
   include CacheIncrementDecrementBehavior
   include CacheInstrumentationBehavior
   include CacheLoggingBehavior
+
+  def setup
+    @cache = lookup_store(expires_in: 60)
+  end
 
   def test_increment_preserves_expiry
     @cache = lookup_store
@@ -37,6 +39,13 @@ class MemoryStoreTest < ActiveSupport::TestCase
     assert_equal 2, @cache.read("counter", raw: true)
     Time.stub(:now, Time.now + 1.minute) do
       assert_nil @cache.read("counter", raw: true)
+    end
+
+    @cache.write("counter", 1, raw: true)
+    @cache.increment("counter", expires_in: 30)
+    assert_equal 2, @cache.read("counter", raw: true)
+    Time.stub(:now, Time.now + 1.minute) do
+      assert_nil @cache.read("counter2", raw: true)
     end
   end
 
@@ -85,7 +94,7 @@ class MemoryStoreTest < ActiveSupport::TestCase
     end
 end
 
-class MemoryStorePruningTest < ActiveSupport::TestCase
+class MemoryStorePruningTest < StoreTest
   def setup
     @record_size = ActiveSupport::Cache.lookup_store(:memory_store).send(:cached_size, 1, ActiveSupport::Cache::Entry.new("aaaaaaaaaa"))
     @cache = ActiveSupport::Cache.lookup_store(:memory_store, expires_in: 60, size: @record_size * 10 + 1)
@@ -151,7 +160,7 @@ class MemoryStorePruningTest < ActiveSupport::TestCase
     assert @cache.exist?(8)
     assert @cache.exist?(7)
     assert @cache.exist?(6)
-    assert_not @cache.exist?(5), "no entry"
+    assert @cache.exist?(5)
     assert_not @cache.exist?(4), "no entry"
     assert_not @cache.exist?(3), "no entry"
     assert_not @cache.exist?(2), "no entry"

@@ -1591,8 +1591,12 @@ module ActiveRecord
     end
 
     # Returns the Arel object associated with the relation.
-    def arel(aliases = nil) # :nodoc:
-      @arel ||= with_connection { |c| build_arel(c, aliases) }
+    def arel(conn = nil, aliases: nil) # :nodoc:
+      @arel ||= if conn
+        build_arel(conn, aliases)
+      else
+        with_connection { |c| build_arel(c, aliases) }
+      end
     end
 
     def construct_join_dependency(associations, join_type) # :nodoc:
@@ -1626,7 +1630,7 @@ module ActiveRecord
           elsif opts.include?("?")
             parts = [build_bound_sql_literal(opts, rest)]
           else
-            parts = [model.sanitize_sql(rest.empty? ? opts : [opts, *rest])]
+            parts = [Arel.sql(model.sanitize_sql([opts, *rest]))]
           end
         when Hash
           opts = opts.transform_keys do |key|
@@ -1653,13 +1657,12 @@ module ActiveRecord
       end
       alias :build_having_clause :build_where_clause
 
-      def async!
+      def async! # :nodoc:
         @async = true
         self
       end
 
-    protected
-      def arel_columns(columns)
+      def arel_columns(columns) # :nodoc:
         columns.flat_map do |field|
           case field
           when Symbol, String
@@ -1996,8 +1999,10 @@ module ActiveRecord
           yield field
         elsif Arel.arel_node?(field)
           field
+        elsif is_symbol
+          Arel.sql(model.adapter_class.quote_table_name(field), retryable: true)
         else
-          Arel.sql(is_symbol ? model.adapter_class.quote_table_name(field) : field)
+          Arel.sql(field)
         end
       end
 
@@ -2009,9 +2014,12 @@ module ActiveRecord
 
       def reverse_sql_order(order_query)
         if order_query.empty?
-          return [table[primary_key].desc] if primary_key
+          if !_reverse_order_columns.empty?
+            return _reverse_order_columns.map { |column| table[column].desc }
+          end
+
           raise IrreversibleOrderError,
-            "Relation has no current order and table has no primary key to be used as default order"
+            "Relation has no current order and table has no order columns to be used as default order"
         end
 
         order_query.flat_map do |o|
@@ -2034,6 +2042,13 @@ module ActiveRecord
             o
           end
         end
+      end
+
+      def _reverse_order_columns
+        roc = []
+        roc << model.implicit_order_column if model.implicit_order_column
+        roc << model.primary_key if model.primary_key
+        roc.flatten.uniq.compact
       end
 
       def does_not_support_reverse?(order)

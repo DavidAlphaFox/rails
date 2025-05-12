@@ -62,9 +62,13 @@ module ActiveRecord
 
           args << "-#{options[:mode]}" if options[:mode]
           args << "-header" if options[:header]
-          args << File.expand_path(config.database, Rails.respond_to?(:root) ? Rails.root : nil)
+          args << File.expand_path(config.database, defined?(Rails.root) ? Rails.root : nil)
 
           find_cmd_and_exec(ActiveRecord.database_cli[:sqlite], *args)
+        end
+
+        def native_database_types # :nodoc:
+          NATIVE_DATABASE_TYPES
         end
       end
 
@@ -182,7 +186,7 @@ module ActiveRecord
       end
 
       def supports_expression_index?
-        database_version >= "3.9.0"
+        true
       end
 
       def requires_reloading?
@@ -210,7 +214,7 @@ module ActiveRecord
       end
 
       def supports_common_table_expressions?
-        database_version >= "3.8.3"
+        true
       end
 
       def supports_insert_returning?
@@ -256,10 +260,6 @@ module ActiveRecord
 
       def supports_index_sort_order?
         true
-      end
-
-      def native_database_types # :nodoc:
-        NATIVE_DATABASE_TYPES
       end
 
       # Returns the current database encoding format as a string, e.g. 'UTF-8'
@@ -507,8 +507,8 @@ module ActiveRecord
       end
 
       def check_version # :nodoc:
-        if database_version < "3.8.0"
-          raise "Your version of SQLite (#{database_version}) is too old. Active Record supports SQLite >= 3.8."
+        if database_version < "3.23.0"
+          raise "Your version of SQLite (#{database_version}) is too old. Active Record supports SQLite >= 3.23.0."
         end
       end
 
@@ -564,6 +564,8 @@ module ActiveRecord
           # Binary columns
           when /x'(.*)'/
             [ $1 ].pack("H*")
+          when "TRUE", "FALSE"
+            default
           else
             # Anything else is blank or some function
             # and we can't know the value of that, so return nil.
@@ -654,8 +656,8 @@ module ActiveRecord
                 column_options[:stored] = column.virtual_stored?
                 column_options[:type] = column.type
               elsif column.has_default?
-                type = lookup_cast_type_from_column(column)
-                default = type.deserialize(column.default)
+                # TODO: Remove fetch_cast_type and the need for connection after we release 8.1.
+                default = column.fetch_cast_type(self).deserialize(column.default)
                 default = -> { column.default_function } if default.nil?
 
                 unless column.auto_increment?

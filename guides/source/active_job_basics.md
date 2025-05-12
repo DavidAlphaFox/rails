@@ -154,7 +154,7 @@ config.solid_queue.connects_to = { database: { writing: :queue } }
 ```
 
 which sets the `:solid_queue` adapter as the default for Active Job in the
-production environment, and connects to the `queue` database for writing.
+development environment, and connects to the `queue` database for writing.
 
 Thereafter, you'd add `queue` to the development database configuration:
 

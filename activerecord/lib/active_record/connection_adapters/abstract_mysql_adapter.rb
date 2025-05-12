@@ -81,6 +81,10 @@ module ActiveRecord
 
           find_cmd_and_exec(ActiveRecord.database_cli[:mysql], *args)
         end
+
+        def native_database_types # :nodoc:
+          NATIVE_DATABASE_TYPES
+        end
       end
 
       def get_database_version # :nodoc:
@@ -178,16 +182,22 @@ module ActiveRecord
         supports_insert_returning? ? column.auto_populated? : column.auto_increment?
       end
 
+      # See https://dev.mysql.com/doc/refman/8.0/en/invisible-indexes.html for more details on MySQL feature.
+      # See https://mariadb.com/kb/en/ignored-indexes/ for more details on the MariaDB feature.
+      def supports_disabling_indexes?
+        if mariadb?
+          database_version >= "10.6.0"
+        else
+          database_version >= "8.0.0"
+        end
+      end
+
       def get_advisory_lock(lock_name, timeout = 0) # :nodoc:
         query_value("SELECT GET_LOCK(#{quote(lock_name.to_s)}, #{timeout})") == 1
       end
 
       def release_advisory_lock(lock_name) # :nodoc:
         query_value("SELECT RELEASE_LOCK(#{quote(lock_name.to_s)})") == 1
-      end
-
-      def native_database_types
-        NATIVE_DATABASE_TYPES
       end
 
       def index_algorithms
@@ -455,6 +465,24 @@ module ActiveRecord
         return if if_not_exists && index_exists?(table_name, column_name, name: index.name)
 
         CreateIndexDefinition.new(index, algorithm)
+      end
+
+      def enable_index(table_name, index_name) # :nodoc:
+        raise NotImplementedError unless supports_disabling_indexes?
+
+        query = <<~SQL
+          ALTER TABLE #{quote_table_name(table_name)} ALTER INDEX #{index_name} #{mariadb? ? "NOT IGNORED" : "VISIBLE"}
+        SQL
+        execute(query)
+      end
+
+      def disable_index(table_name, index_name) # :nodoc:
+        raise NotImplementedError unless supports_disabling_indexes?
+
+        query = <<~SQL
+          ALTER TABLE #{quote_table_name(table_name)} ALTER INDEX #{index_name} #{mariadb? ? "IGNORED" : "INVISIBLE"}
+        SQL
+        execute(query)
       end
 
       def add_sql_comment!(sql, comment) # :nodoc:

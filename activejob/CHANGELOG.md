@@ -1,3 +1,15 @@
+*   Defer invocation of ActiveJob enqueue callbacks until after commit when
+    `enqueue_after_transaction_commit` is enabled.
+
+    *Will Roever*
+
+*   Add `report:` option to `ActiveJob::Base#retry_on` and `#discard_on`
+
+    When the `report:` option is passed, errors will be reported to the error reporter
+    before being retried / discarded.
+
+    *Andrew Novoselac*
+
 *   Accept a block for `ActiveJob::ConfiguredJob#perform_later`.
 
     This was inconsistent with a regular `ActiveJob::Base#perform_later`.

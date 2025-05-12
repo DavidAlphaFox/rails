@@ -68,6 +68,7 @@ module ActionCable
             @nio ||= NIO::Selector.new
             # 创建线程池
             @executor ||= Concurrent::ThreadPoolExecutor.new(
+              name: "ActionCable-streamer",
               min_threads: 1,
               max_threads: 10,
               max_queue: 0,

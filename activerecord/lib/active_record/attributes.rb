@@ -179,8 +179,8 @@ module ActiveRecord
       #       @currency_converter = currency_converter
       #     end
       #
-      #     # value will be the result of +deserialize+ or
-      #     # +cast+. Assumed to be an instance of +Money+ in
+      #     # value will be the result of #deserialize or
+      #     # #cast. Assumed to be an instance of Money in
       #     # this case.
       #     def serialize(value)
       #       value_in_bitcoins = @currency_converter.convert_to_bitcoins(value)
@@ -241,6 +241,7 @@ module ActiveRecord
 
       def _default_attributes # :nodoc:
         @default_attributes ||= begin
+          # TODO: Remove the need for a connection after we release 8.1.
           attributes_hash = with_connection do |connection|
             columns_hash.transform_values do |column|
               ActiveModel::Attribute.from_database(column.name, column.default, type_for_column(connection, column))
@@ -300,6 +301,7 @@ module ActiveRecord
         end
 
         def type_for_column(connection, column)
+          # TODO: Remove the need for a connection after we release 8.1.
           hook_attribute_type(column.name, super)
         end
     end

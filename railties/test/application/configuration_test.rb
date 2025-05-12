@@ -159,7 +159,7 @@ module ApplicationTests
       assert_match(/You're using a cache/, error.message)
     end
 
-    test "a renders exception on pending migration" do
+    test "renders an exception on pending migration" do
       add_to_config <<-RUBY
         config.active_record.migration_error    = :page_load
         config.consider_all_requests_local      = true
@@ -189,6 +189,67 @@ module ApplicationTests
           end
 
           assert_match(/\d{14}\s+CreateUser/, output)
+        end
+
+        assert_equal 302, last_response.status
+
+        get "/foo"
+        assert_equal 404, last_response.status
+      ensure
+        ActiveRecord::Migrator.migrations_paths = nil
+      end
+    end
+
+    test "renders an exception on pending migration for multiple DBs" do
+      add_to_config <<-RUBY
+        config.active_record.migration_error    = :page_load
+        config.consider_all_requests_local      = true
+        config.action_dispatch.show_exceptions  = :all
+      RUBY
+
+      app_file "config/database.yml", <<-YAML
+        <%= Rails.env %>:
+          primary:
+            adapter: sqlite3
+            database: 'dev_db'
+          other:
+            adapter: sqlite3
+            database: 'other_dev_db'
+            migrations_paths: db/other_migrate
+      YAML
+
+      app_file "db/migrate/20140708012246_create_users.rb", <<-RUBY
+        class CreateUsers < ActiveRecord::Migration::Current
+          def change
+            create_table :users
+          end
+        end
+      RUBY
+
+      app_file "db/other_migrate/20140708012247_create_blogs.rb", <<-RUBY
+        class CreateBlogs < ActiveRecord::Migration::Current
+          def change
+            create_table :blogs
+          end
+        end
+      RUBY
+
+      app "development"
+
+      begin
+        ActiveRecord::Migrator.migrations_paths = ["#{app_path}/db/migrate", "#{app_path}/db/other_migrate"]
+
+        get "/foo"
+        assert_equal 500, last_response.status
+        assert_match "ActiveRecord::PendingMigrationError", last_response.body
+
+        assert_changes -> { File.exist?(File.join(app_path, "db", "schema.rb")) }, from: false, to: true do
+          output = capture(:stdout) do
+            post "/rails/actions", { error: "ActiveRecord::PendingMigrationError", action: "Run pending migrations", location: "/foo" }
+          end
+
+          assert_match(/\d{14}\s+CreateUsers/, output)
+          assert_match(/\d{14}\s+CreateBlogs/, output)
         end
 
         assert_equal 302, last_response.status
@@ -815,6 +876,28 @@ module ApplicationTests
       assert File.exist?(app_path("tmp/local_secret.txt"))
     end
 
+    test "application will use ENV['SECRET_KEY_BASE'] if present in local env" do
+      env_var_secret = "env_var_secret"
+      ENV["SECRET_KEY_BASE"] = env_var_secret
+
+      app "development"
+
+      assert_equal env_var_secret, app.secret_key_base
+    ensure
+      ENV.delete "SECRET_KEY_BASE"
+    end
+
+    test "application will use secret_key_base from credentials if present in local env" do
+      credentials_secret = "credentials_secret"
+      add_to_config <<-RUBY
+        Rails.application.credentials.secret_key_base = "#{credentials_secret}"
+      RUBY
+
+      app "development"
+
+      assert_equal credentials_secret, app.secret_key_base
+    end
+
     test "application will not generate secret_key_base in tmp file if blank in production" do
       app_file "config/initializers/secret_token.rb", <<-RUBY
         Rails.application.credentials.secret_key_base = nil
@@ -846,8 +929,31 @@ module ApplicationTests
       assert_nothing_raised do
         app "production"
       end
+
+      assert_not_nil app.secret_key_base
+      assert File.exist?(app_path("tmp/local_secret.txt"))
     ensure
-      ENV["SECRET_KEY_BASE_DUMMY"] = nil
+      ENV.delete "SECRET_KEY_BASE_DUMMY"
+    end
+
+    test "always use tmp file secret when dummy secret_key_base is used in production" do
+      secret = "tmp_file_secret"
+      ENV["SECRET_KEY_BASE_DUMMY"] = "1"
+      ENV["SECRET_KEY_BASE"] = "env_secret"
+
+      app_file "config/initializers/secret_token.rb", <<-RUBY
+        Rails.application.credentials.secret_key_base = "credentials_secret"
+      RUBY
+
+      app_dir("tmp")
+      File.binwrite(app_path("tmp/local_secret.txt"), secret)
+
+      app "production"
+
+      assert_equal secret, app.secret_key_base
+    ensure
+      ENV.delete "SECRET_KEY_BASE_DUMMY"
+      ENV.delete "SECRET_KEY_BASE"
     end
 
     test "raise when secret_key_base is not a type of string" do
@@ -2823,6 +2929,85 @@ module ApplicationTests
       assert_equal false, ActiveRecord::Base.run_commit_callbacks_on_first_saved_instances_in_transaction
     end
 
+    test "config.active_record.use_legacy_signed_id_verifier is :generate_and_verify by default for new apps" do
+      app "development"
+
+      assert_equal :generate_and_verify, Rails.application.config.active_record.use_legacy_signed_id_verifier
+    end
+
+    test "Rails.application.message_verifiers['active_record/signed_id'] generates and verifies messages using legacy options when config.active_record.use_legacy_signed_id_verifier is :generate_and_verify" do
+      add_to_config <<-RUBY
+        config.active_record.use_legacy_signed_id_verifier = :generate_and_verify
+        config.secret_key_base = "secret"
+      RUBY
+
+      app "development"
+
+      signed_id_verifier = Rails.application.message_verifiers["active_record/signed_id"]
+
+      secret = app.key_generator.generate_key("active_record/signed_id")
+      legacy_verifier = ActiveSupport::MessageVerifier.new(secret, digest: "SHA256", serializer: JSON, url_safe: true)
+
+      assert_equal "message", legacy_verifier.verify(signed_id_verifier.generate("message"))
+      assert_equal "message", signed_id_verifier.verify(legacy_verifier.generate("message"))
+    end
+
+    test "Rails.application.message_verifiers['active_record/signed_id'] verifies messages using legacy options when config.active_record.use_legacy_signed_id_verifier is :verify" do
+      add_to_config <<-RUBY
+        config.active_record.use_legacy_signed_id_verifier = :verify
+        config.secret_key_base = "secret"
+      RUBY
+
+      app "development"
+
+      signed_id_verifier = Rails.application.message_verifiers["active_record/signed_id"]
+
+      secret = app.key_generator.generate_key("active_record/signed_id")
+      legacy_verifier = ActiveSupport::MessageVerifier.new(secret, digest: "SHA256", serializer: JSON, url_safe: true)
+
+      assert_equal "message", signed_id_verifier.verify(legacy_verifier.generate("message"))
+      assert_raises ActiveSupport::MessageVerifier::InvalidSignature do
+        legacy_verifier.verify(signed_id_verifier.generate("message"))
+      end
+    end
+
+    test "Rails.application.message_verifiers['active_record/signed_id'] does not use legacy options when config.active_record.use_legacy_signed_id_verifier is false" do
+      add_to_config <<-RUBY
+        config.active_record.use_legacy_signed_id_verifier = false
+        config.secret_key_base = "secret"
+      RUBY
+
+      app "development"
+
+      signed_id_verifier = Rails.application.message_verifiers["active_record/signed_id"]
+
+      secret = app.key_generator.generate_key("active_record/signed_id")
+      legacy_verifier = ActiveSupport::MessageVerifier.new(secret, digest: "SHA256", serializer: JSON, url_safe: true)
+
+      assert_raises ActiveSupport::MessageVerifier::InvalidSignature do
+        signed_id_verifier.verify(legacy_verifier.generate("message"))
+      end
+      assert_raises ActiveSupport::MessageVerifier::InvalidSignature do
+        legacy_verifier.verify(signed_id_verifier.generate("message"))
+      end
+    end
+
+    test "raises when config.active_record.use_legacy_signed_id_verifier has invalid value" do
+      add_to_config <<-RUBY
+        config.active_record.use_legacy_signed_id_verifier = :invalid_option
+      RUBY
+
+      assert_raise(match: /config.active_record.use_legacy_signed_id_verifier/) do
+        app "development"
+      end
+    end
+
+    test "ActiveRecord.message_verifiers is Rails.application.message_verifiers" do
+      app "development"
+
+      assert_same Rails.application.message_verifiers, ActiveRecord.message_verifiers
+    end
+
     test "PostgresqlAdapter.decode_dates is true by default for new apps" do
       app_file "config/initializers/active_record.rb", <<~RUBY
         ActiveRecord::Base.establish_connection(adapter: "postgresql")
@@ -3017,6 +3202,20 @@ module ApplicationTests
       app "test"
 
       assert_equal 1234, ActiveSupport.test_parallelization_threshold
+    end
+
+    test "ActiveSupport.parallelize_test_databases can be configured via config.active_support.parallelize_test_databases" do
+      remove_from_config '.*config\.load_defaults.*\n'
+
+      app_file "config/environments/test.rb", <<-RUBY
+        Rails.application.configure do
+          config.active_support.parallelize_test_databases = false
+        end
+      RUBY
+
+      app "test"
+
+      assert_not ActiveSupport.parallelize_test_databases
     end
 
     test "custom serializers should be able to set via config.active_job.custom_serializers in an initializer" do
@@ -3922,7 +4121,7 @@ module ApplicationTests
 
       app "development"
 
-      assert_equal nil, ActiveStorage.variant_processor
+      assert_nil ActiveStorage.variant_processor
     end
 
     test "ActiveStorage.variant_processor uses vips by default" do

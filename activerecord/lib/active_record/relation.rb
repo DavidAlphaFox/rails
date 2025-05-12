@@ -272,7 +272,12 @@ module ActiveRecord
     # such situation.
     def create_or_find_by(attributes, &block)
       with_connection do |connection|
-        transaction(requires_new: true) { create(attributes, &block) }
+        record = nil
+        transaction(requires_new: true) do
+          record = create(attributes, &block)
+          record._last_transaction_return_status || raise(ActiveRecord::Rollback)
+        end
+        record
       rescue ActiveRecord::RecordNotUnique
         if connection.transaction_open?
           where(attributes).lock.find_by!(attributes)
@@ -287,7 +292,12 @@ module ActiveRecord
     # is raised if the created record is invalid.
     def create_or_find_by!(attributes, &block)
       with_connection do |connection|
-        transaction(requires_new: true) { create!(attributes, &block) }
+        record = nil
+        transaction(requires_new: true) do
+          record = create!(attributes, &block)
+          record._last_transaction_return_status || raise(ActiveRecord::Rollback)
+        end
+        record
       rescue ActiveRecord::RecordNotUnique
         if connection.transaction_open?
           where(attributes).lock.find_by!(attributes)
@@ -615,17 +625,15 @@ module ActiveRecord
       end
 
       model.with_connection do |c|
-        arel = eager_loading? ? apply_join_dependency.arel : build_arel(c)
+        arel = eager_loading? ? apply_join_dependency.arel : arel(c)
         arel.source.left = table
 
-        group_values_arel_columns = arel_columns(group_values.uniq)
-        having_clause_ast = having_clause.ast unless having_clause.empty?
         key = if model.composite_primary_key?
           primary_key.map { |pk| table[pk] }
         else
           table[primary_key]
         end
-        stmt = arel.compile_update(values, key, having_clause_ast, group_values_arel_columns)
+        stmt = arel.compile_update(values, key)
         c.update(stmt, "#{model} Update All").tap { reset }
       end
     end
@@ -1032,17 +1040,15 @@ module ActiveRecord
       end
 
       model.with_connection do |c|
-        arel = eager_loading? ? apply_join_dependency.arel : build_arel(c)
+        arel = eager_loading? ? apply_join_dependency.arel : arel(c)
         arel.source.left = table
 
-        group_values_arel_columns = arel_columns(group_values.uniq)
-        having_clause_ast = having_clause.ast unless having_clause.empty?
         key = if model.composite_primary_key?
           primary_key.map { |pk| table[pk] }
         else
           table[primary_key]
         end
-        stmt = arel.compile_delete(key, having_clause_ast, group_values_arel_columns)
+        stmt = arel.compile_delete(key)
 
         c.delete(stmt, "#{model} Delete All").tap { reset }
       end
@@ -1227,7 +1233,7 @@ module ActiveRecord
         end
       else
         model.with_connection do |conn|
-          conn.unprepared_statement { conn.to_sql(arel) }
+          conn.unprepared_statement { conn.to_sql(arel(conn)) }
         end
       end
     end
@@ -1407,12 +1413,16 @@ module ActiveRecord
 
       def _increment_attribute(attribute, value = 1)
         bind = predicate_builder.build_bind_attribute(attribute.name, value.abs)
-        expr = table.coalesce(Arel::Nodes::UnqualifiedColumn.new(attribute), 0)
+        expr = table.coalesce(attribute, 0)
         expr = value < 0 ? expr - bind : expr + bind
         expr.expr
       end
 
       def exec_queries(&block)
+        if lock_value && model.current_preventing_writes
+          raise ActiveRecord::ReadOnlyError, "Lock query attempted while in readonly mode"
+        end
+
         skip_query_cache_if_necessary do
           rows = if scheduled?
             future = @future_result
@@ -1452,7 +1462,7 @@ module ActiveRecord
                 else
                   relation = join_dependency.apply_column_aliases(relation)
                   @_join_dependency = join_dependency
-                  c.select_all(relation.arel, "SQL", async: async)
+                  c.select_all(relation.arel, "#{model.name} Eager Load", async: async)
                 end
               end
             end

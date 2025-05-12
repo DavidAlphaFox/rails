@@ -249,8 +249,8 @@ The `form_with` helper has a `:model` option that allows you to bind the form bu
 For example, if we have a `@book` model object:
 
 ```ruby
-@book = Book.find(42)
-# => #<Book id: 42, title: "Walden", author: "Henry David Thoreau">
+@book = Book.new
+# => #<Book id: nil, title: nil, author: nil>
 ```
 
 And the following form to create a new book:
@@ -358,7 +358,7 @@ The above will produce the following output:
 
 The object yielded by `fields_for` is a form builder like the one yielded by
 `form_with`. The `fields_for` helper creates a similar binding but without
-rendering a `<form>` tag. You can learn more about `field_for` in the [API
+rendering a `<form>` tag. You can learn more about `fields_for` in the [API
 docs](https://api.rubyonrails.org/classes/ActionView/Helpers/FormBuilder.html#method-i-fields_for).
 
 ### Relying on Record Identification
@@ -1338,4 +1338,4 @@ Generally, these helpers have the same name as their form builder counterparts p
 Using `form_tag` and `form_for`
 -------------------------------
 
-Before `form_with` was introduced in Rails 5.1 its functionality was split between [`form_tag`](https://api.rubyonrails.org/classes/ActionView/Helpers/FormTagHelper.html#method-i-form_tag) and [`form_for`](https://api.rubyonrails.org/classes/ActionView/Helpers/FormHelper.html#method-i-form_for). Both are now discouraged in favor of `form_with`, but you can still find being used in some codebases.
+Before `form_with` was introduced in Rails 5.1 its functionality was split between [`form_tag`](https://api.rubyonrails.org/classes/ActionView/Helpers/FormTagHelper.html#method-i-form_tag) and [`form_for`](https://api.rubyonrails.org/classes/ActionView/Helpers/FormHelper.html#method-i-form_for). Both are now discouraged in favor of `form_with`, but you can still find them being used in some codebases.

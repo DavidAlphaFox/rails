@@ -21,6 +21,7 @@ module Rails
                     :beginning_of_week, :filter_redirect, :x,
                     :content_security_policy_report_only,
                     :content_security_policy_nonce_generator, :content_security_policy_nonce_directives,
+                    :content_security_policy_nonce_auto,
                     :require_master_key, :credentials, :disable_sandbox, :sandbox_by_default,
                     :add_autoload_paths_to_load_path, :rake_eager_load, :server_timing, :log_file_size,
                     :dom_testing_default_html_version, :yjit
@@ -72,6 +73,7 @@ module Rails
         @content_security_policy_report_only     = false
         @content_security_policy_nonce_generator = nil
         @content_security_policy_nonce_directives = nil
+        @content_security_policy_nonce_auto      = false
         @require_master_key                      = false
         @loaded_config_version                   = nil
         @credentials                             = ActiveSupport::InheritableOptions.new(credentials_defaults)
@@ -353,6 +355,10 @@ module Rails
           # redefine methods (e.g. mocking), hence YJIT isn't generally
           # faster in these environments.
           self.yjit = !Rails.env.local?
+
+          if respond_to?(:action_controller)
+            action_controller.escape_json_responses = false
+          end
         else
           raise "Unknown version #{target_version.to_s.inspect}"
         end
@@ -510,16 +516,18 @@ module Rails
 
       def secret_key_base
         @secret_key_base || begin
-          self.secret_key_base = if generate_local_secret?
+          self.secret_key_base = if ENV["SECRET_KEY_BASE_DUMMY"]
             generate_local_secret
           else
-            ENV["SECRET_KEY_BASE"] || Rails.application.credentials.secret_key_base
+            ENV["SECRET_KEY_BASE"] ||
+              Rails.application.credentials.secret_key_base ||
+              (Rails.env.local? && generate_local_secret)
           end
         end
       end
 
       def secret_key_base=(new_secret_key_base)
-        if new_secret_key_base.nil? && generate_local_secret?
+        if new_secret_key_base.nil? && Rails.env.local?
           @secret_key_base = generate_local_secret
         elsif new_secret_key_base.is_a?(String) && new_secret_key_base.present?
           @secret_key_base = new_secret_key_base
@@ -646,10 +654,6 @@ module Rails
           end
 
           File.binread(key_file)
-        end
-
-        def generate_local_secret?
-          Rails.env.local? || ENV["SECRET_KEY_BASE_DUMMY"]
         end
     end
   end
