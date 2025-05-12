@@ -33,7 +33,7 @@ module ActionCable
       def setup_heartbeat_timer
         @heartbeat_timer ||= event_loop.timer(BEAT_INTERVAL) do
           event_loop.post { connections.each(&:beat) }
-        end
+        end #设置心跳计时器，每3秒进行一次心跳,如果Timer存在了，就不重新创建timer
       end
 
       def open_connections_statistics

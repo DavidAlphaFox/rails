@@ -21,7 +21,7 @@ module ActionCable
 
       def initialize
         @log_tags = []
-
+        ## 默认情况下@connection_class是一个lambda
         @connection_class = -> { ActionCable::Connection::Base }
         @worker_pool_size = 4
 

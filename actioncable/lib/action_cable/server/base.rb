@@ -30,15 +30,15 @@ module ActionCable
 
       def initialize(config: self.class.config)
         @config = config
-        @mutex = Monitor.new
+        @mutex = Monitor.new #创建锁
         @remote_connections = @event_loop = @worker_pool = @pubsub = nil
       end
 
       # Called by Rack to set up the server.
       def call(env)
         return config.health_check_application.call(env) if env["PATH_INFO"] == config.health_check_path
-        setup_heartbeat_timer
-        config.connection_class.call.new(self, env).process
+        setup_heartbeat_timer #此处会不会引起并发冲突？
+        config.connection_class.call.new(self, env).process ##此时将Server直接传入其中
       end
 
       # Disconnect all the connections identified by `identifiers` on this server or

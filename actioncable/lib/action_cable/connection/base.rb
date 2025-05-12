@@ -142,7 +142,7 @@ module ActionCable
           subscriptions: subscriptions.identifiers,
           request_id: @env["action_dispatch.request_id"]
         }
-      end
+      end ##统计函数
 
       def beat
         transmit type: ActionCable::INTERNAL[:message_types][:ping], message: Time.now.to_i

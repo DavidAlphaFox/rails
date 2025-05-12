@@ -14,7 +14,7 @@ module ActionCable
         @todo = Queue.new
 
         @spawn_mutex = Mutex.new
-      end
+      end #创建新的EventLoop
 
       def timer(interval, &block)
         Concurrent::TimerTask.new(execution_interval: interval, &block).tap(&:execute)
@@ -60,41 +60,41 @@ module ActionCable
 
       private
         def spawn
-          return if @thread && @thread.status
+          return if @thread && @thread.status ##如果已经存在线程就立刻返回
 
           @spawn_mutex.synchronize do
-            return if @thread && @thread.status
+            return if @thread && @thread.status ##二次检查
 
-            @nio ||= NIO::Selector.new
+            @nio ||= NIO::Selector.new ## 创建新的NIO
 
             @executor ||= Concurrent::ThreadPoolExecutor.new(
               min_threads: 1,
               max_threads: 10,
               max_queue: 0,
-            )
+            ) ## 创建新的执行器
 
-            @thread = Thread.new { run }
+            @thread = Thread.new { run } ## 使用线程执行run函数
 
             return true
           end
         end
 
         def wakeup
-          spawn || @nio.wakeup
+          spawn || @nio.wakeup ##唤醒NIO
         end
 
         def run
           loop do
-            if @stopping
+            if @stopping ## 如果得到stop信号，立刻关闭NIO，结束执行
               @nio.close
               break
             end
 
-            until @todo.empty?
+            until @todo.empty? ## 循环执行@todo队列直到当前对立中任务执行完成
               @todo.pop(true).call
             end
 
-            next unless monitors = @nio.select
+            next unless monitors = @nio.select ## 从NIO中选择所有关注的时间
 
             monitors.each do |monitor|
               io = monitor.io

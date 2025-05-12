@@ -19,7 +19,7 @@ module ActionCable
     initializer "action_cable.helpers" do
       ActiveSupport.on_load(:action_view) do
         include ActionCable::Helpers::ActionCableHelper
-      end
+      end ## 在action_view加载完成后，加载ActionCableHelper
     end
 
     initializer "action_cable.logger" do
@@ -50,7 +50,7 @@ module ActionCable
         if (config_path = Pathname.new(app.config.paths["config/cable"].first)).exist?
           self.cable = app.config_for(config_path).to_h.with_indifferent_access
         end
-
+        #connection_class默认是ApplicationCable::Connection,这个类默认是继承的ActionCable::Connection::Base
         previous_connection_class = connection_class
         self.connection_class = -> { "ApplicationCable::Connection".safe_constantize || previous_connection_class.call }
         self.filter_parameters += app.config.filter_parameters

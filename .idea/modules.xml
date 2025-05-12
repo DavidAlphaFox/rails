@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/actioncable.iml" filepath="$PROJECT_DIR$/.idea/modules/actioncable.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/actionmailbox.iml" filepath="$PROJECT_DIR$/.idea/modules/actionmailbox.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/actionmailer.iml" filepath="$PROJECT_DIR$/.idea/modules/actionmailer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/actionpack.iml" filepath="$PROJECT_DIR$/.idea/modules/actionpack.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/actiontext.iml" filepath="$PROJECT_DIR$/.idea/modules/actiontext.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/actionview.iml" filepath="$PROJECT_DIR$/.idea/modules/actionview.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/activejob.iml" filepath="$PROJECT_DIR$/.idea/modules/activejob.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/activemodel.iml" filepath="$PROJECT_DIR$/.idea/modules/activemodel.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/activerecord.iml" filepath="$PROJECT_DIR$/.idea/modules/activerecord.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/activestorage.iml" filepath="$PROJECT_DIR$/.idea/modules/activestorage.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/activesupport.iml" filepath="$PROJECT_DIR$/.idea/modules/activesupport.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/rail_inspector.iml" filepath="$PROJECT_DIR$/.idea/modules/rail_inspector.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/rails.iml" filepath="$PROJECT_DIR$/.idea/rails.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/railties.iml" filepath="$PROJECT_DIR$/.idea/modules/railties.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/releaser.iml" filepath="$PROJECT_DIR$/.idea/modules/releaser.iml" />
+    </modules>
+  </component>
+</project>
