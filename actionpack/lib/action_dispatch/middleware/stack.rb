@@ -74,7 +74,7 @@ module ActionDispatch
     attr_accessor :middlewares
 
     def initialize(*args)
-      @middlewares = []
+      @middlewares = [] # 默认中间件堆栈是空的
       yield(self) if block_given?
     end
 
@@ -169,7 +169,7 @@ module ActionDispatch
         if instrumenting
           e.build_instrumented(a)
         else
-          e.build(a)
+          e.build(a) #middlewares数组中的元素，反序的逐层套在外面，原来index为0的元素，是直接包在app||block外面的
         end
       end
     end

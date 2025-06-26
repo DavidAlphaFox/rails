@@ -6,7 +6,7 @@ module Rails
   class Railtie
     class Configuration
       def initialize
-        @@options ||= {}
+        @@options ||= {} #类共享的配置是空字典
       end
 
       # Expose the eager_load_namespaces at "module" level for convenience.

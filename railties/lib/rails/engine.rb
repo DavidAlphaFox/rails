@@ -516,9 +516,9 @@ module Rails
     def app
       @app || @app_build_lock.synchronize {
         @app ||= begin
-          stack = default_middleware_stack
-          config.middleware = build_middleware.merge_into(stack)
-          config.middleware.build(endpoint)
+          stack = default_middleware_stack # 默认中间件堆栈
+          config.middleware = build_middleware.merge_into(stack) # 添加中间件到中间件堆栈中
+          config.middleware.build(endpoint) # 构建APP
         end
       }
     end
@@ -753,7 +753,7 @@ module Rails
       end
 
       def build_middleware
-        config.middleware
+        config.middleware #获取配置中的中间件
       end
   end
 end

@@ -42,13 +42,13 @@ module Rails
     # And finally they can also be removed from the stack completely:
     #
     #     config.middleware.delete ActionDispatch::Flash
-    #
+    #  此处MiddlewareStackProxy保存的是添加middleware的操作，而不是直接将middleware放到其中
     class MiddlewareStackProxy
       def initialize(operations = [], delete_operations = [])
         @operations = operations
         @delete_operations = delete_operations
       end
-
+      # "(...)"是参数语法糖，传统写法为(*args, **kwargs, &block)
       def insert_before(...)
         @operations << -> middleware { middleware.insert_before(...) }
       end
@@ -84,7 +84,7 @@ module Rails
       def unshift(...)
         @operations << -> middleware { middleware.unshift(...) }
       end
-
+      # 将所有的中间件操作全部执行了
       def merge_into(other) # :nodoc:
         (@operations + @delete_operations).each do |operation|
           operation.call(other)
