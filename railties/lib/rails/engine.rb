@@ -482,7 +482,7 @@ module Rails
 
     # Invoke the server registered hooks.
     # Check Rails::Railtie.server for more info.
-    def load_server(app = self)
+    def load_server(app = self) ## 加载服务器
       run_server_blocks(app)
       self
     end
@@ -516,9 +516,9 @@ module Rails
     def app
       @app || @app_build_lock.synchronize { #构建时候需要同步
         @app ||= begin
-          stack = default_middleware_stack # 使用默认的中间件
-          config.middleware = build_middleware.merge_into(stack) # 合并所有中间件
-          config.middleware.build(endpoint) # 构建rack应用
+          stack = default_middleware_stack # 默认中间件堆栈
+          config.middleware = build_middleware.merge_into(stack) # 添加中间件到中间件堆栈中
+          config.middleware.build(endpoint) # 构建APP
         end
       }
     end
@@ -753,7 +753,7 @@ module Rails
       end
 
       def build_middleware
-        config.middleware
+        config.middleware #获取配置中的中间件
       end
   end
 end

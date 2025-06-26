@@ -94,9 +94,9 @@ module ActiveSupport
             block.call(base)
           else
             if base.is_a?(Module)
-              base.class_eval(&block)
+              base.class_eval(&block) #如果是模块，则使用类方法进行eval
             else
-              base.instance_eval(&block)
+              base.instance_eval(&block) #否则直接在instance上进行eval
             end
           end
         end

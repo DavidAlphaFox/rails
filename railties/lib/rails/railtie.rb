@@ -188,7 +188,7 @@ module Rails
       # Railtie::Configurable, but this module is no longer required for all
       # subclasses of Railtie so we provide the class method here.
       def configure(&block)
-        instance.configure(&block)
+        instance.configure(&block) ## 对自身进行配置
       end
 
       def <=>(other) # :nodoc:
@@ -286,7 +286,7 @@ module Rails
       end
 
       def run_server_blocks(app) # :nodoc:
-        each_registered_block(:server) { |block| block.call(app) }
+        each_registered_block(:server) { |block| block.call(app) } #执行所有共和server相关的hook
       end
 
     private

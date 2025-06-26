@@ -56,9 +56,9 @@ module Rails
     end
 
     def run_initializers(group = :default, *args)
-      return if instance_variable_defined?(:@ran)
+      return if instance_variable_defined?(:@ran) #如果已经初始化过了，立刻结束
       initializers.tsort_each do |initializer|
-        initializer.run(*args) if initializer.belongs_to?(group)
+        initializer.run(*args) if initializer.belongs_to?(group) # 逐个执行属于该分组的初始化器
       end
       @ran = true
     end
