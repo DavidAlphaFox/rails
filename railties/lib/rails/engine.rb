@@ -514,11 +514,11 @@ module Rails
 
     # Returns the underlying Rack application for this engine.
     def app
-      @app || @app_build_lock.synchronize {
+      @app || @app_build_lock.synchronize { #构建时候需要同步
         @app ||= begin
-          stack = default_middleware_stack
-          config.middleware = build_middleware.merge_into(stack)
-          config.middleware.build(endpoint)
+          stack = default_middleware_stack # 使用默认的中间件
+          config.middleware = build_middleware.merge_into(stack) # 合并所有中间件
+          config.middleware.build(endpoint) # 构建rack应用
         end
       }
     end

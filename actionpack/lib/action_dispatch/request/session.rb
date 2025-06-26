@@ -17,11 +17,11 @@ module ActionDispatch
 
       # Creates a session hash, merging the properties of the previous session if any.
       def self.create(store, req, default_options)
-        session_was = find req
-        session     = Request::Session.new(store, req)
-        session.merge! session_was if session_was
+        session_was = find req #在header中寻找历史的session
+        session     = Request::Session.new(store, req) # 重新构建一个session
+        session.merge! session_was if session_was # 合并两个session
 
-        set(req, session)
+        set(req, session) # 将session放入req中
         Options.set(req, Request::Session::Options.new(store, default_options))
         session
       end
