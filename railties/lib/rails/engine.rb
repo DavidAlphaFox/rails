@@ -482,7 +482,7 @@ module Rails
 
     # Invoke the server registered hooks.
     # Check Rails::Railtie.server for more info.
-    def load_server(app = self)
+    def load_server(app = self) ## 加载服务器
       run_server_blocks(app)
       self
     end

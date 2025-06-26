@@ -66,15 +66,15 @@ module Rails
     autoload :Finisher,               "rails/application/finisher"
     autoload :Railties,               "rails/engine/railties"
     autoload :RoutesReloader,         "rails/application/routes_reloader"
-
+    # Application类自己的类方法
     class << self
-      def inherited(base)
+      def inherited(base) #当Application被集成的时候，进行回调
         super
-        Rails.app_class = base
+        Rails.app_class = base # 把Application的子类设置为Rails.app_class
         # lib has to be added to $LOAD_PATH unconditionally, even if it's in the
         # autoload paths and config.add_autoload_paths_to_load_path is false.
-        add_lib_to_load_path!(find_root(base.called_from))
-        ActiveSupport.run_load_hooks(:before_configuration, base)
+        add_lib_to_load_path!(find_root(base.called_from)) # 把Application子类所在的位置，加入到库加载路中中
+        ActiveSupport.run_load_hooks(:before_configuration, base) # 调用回调钩子，说明Application开始准备进入配置了
       end
 
       def instance
@@ -435,11 +435,11 @@ module Rails
 
     # Initialize the application passing the given group. By default, the
     # group is :default
-    def initialize!(group = :default) # :nodoc:
+    def initialize!(group = :default) # :nodoc: 初始化整个应用
       raise "Application has been already initialized." if @initialized
-      run_initializers(group, self)
-      @initialized = true
-      self
+      run_initializers(group, self) # 执行初始化
+      @initialized = true ## 标记已经初始化了
+      self ## 返回自身，准备开始进入执行状态
     end
 
     def initializers # :nodoc:

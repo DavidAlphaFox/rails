@@ -42,7 +42,7 @@ module Rails
 
     attr_writer :application
     attr_accessor :app_class, :cache, :logger
-    def application
+    def application ##Rails项目运行的入口点
       @application ||= (app_class.instance if app_class)
     end
 
