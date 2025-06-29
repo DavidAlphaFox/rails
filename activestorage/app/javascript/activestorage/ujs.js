@@ -15,8 +15,10 @@ export function start() {
 }
 
 function didClick(event) {
+  //自己最近的button或者input
   const button = event.target.closest("button, input")
   if (button && button.type === "submit" && button.form) {
+    //记录form对应的button
     submitButtonsByForm.set(button.form, button)
   }
 }
@@ -33,7 +35,8 @@ function didSubmitRemoteElement(event) {
 
 function handleFormSubmissionEvent(event) {
   const form = event.target
-
+  //表单提交的瞬间，检查是否有正在进行的DirectUpload
+  //有直接返回，不继续传播事件
   if (form.hasAttribute(processingAttribute)) {
     event.preventDefault()
     return
@@ -44,13 +47,17 @@ function handleFormSubmissionEvent(event) {
 
   if (inputs.length) {
     event.preventDefault()
+    //设置正在上传
     form.setAttribute(processingAttribute, "")
     inputs.forEach(disable)
     controller.start(error => {
+      //删除正在上传属性
       form.removeAttribute(processingAttribute)
       if (error) {
+        //出现错误，则设置所有域都可更改
         inputs.forEach(enable)
       } else {
+        //上传表单
         submitForm(form)
       }
     })
@@ -58,6 +65,7 @@ function handleFormSubmissionEvent(event) {
 }
 
 function submitForm(form) {
+  //得到提交类型的button
   let button = submitButtonsByForm.get(form) || findElement(form, "input[type=submit], button[type=submit]")
 
   if (button) {
