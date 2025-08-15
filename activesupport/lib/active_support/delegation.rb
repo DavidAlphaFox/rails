@@ -33,7 +33,7 @@ module ActiveSupport
           else
             ""
           end
-
+        #记录delegate被调用时候的位置
         location ||= caller_locations(1, 1).first
         file, line = location.path, location.lineno
 
@@ -50,7 +50,7 @@ module ActiveSupport
         else
           to.to_s
         end
-        receiver = "self.#{receiver}" if RESERVED_METHOD_NAMES.include?(receiver)
+        receiver = "self.#{receiver}" if RESERVED_METHOD_NAMES.include?(receiver) #对于是保留字的接收者，进行特殊处理
 
         explicit_receiver = false
         receiver_class = if as
@@ -65,7 +65,7 @@ module ActiveSupport
 
         method_def = []
         method_names = []
-
+        # 如果是私有方法，就在method_def中添加私有方法
         method_def << "self.private" if private
 
         methods.each do |method|
@@ -142,9 +142,9 @@ module ActiveSupport
               "  end" <<
               "end"
           end
-        end
-        owner.module_eval(method_def.join(";"), file, line)
-        method_names
+        end #生成代理方法
+        owner.module_eval(method_def.join(";"), file, line) #在模块上进行注册
+        method_names #返回所有的方法名称
       end
 
       def generate_method_missing(owner, target, allow_nil: nil)
