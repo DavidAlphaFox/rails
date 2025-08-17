@@ -38,7 +38,7 @@ module ActionCable
       def call(env)
         return config.health_check_application.call(env) if env["PATH_INFO"] == config.health_check_path
         setup_heartbeat_timer #此处会不会引起并发冲突？
-        config.connection_class.call.new(self, env).process ##此时将Server直接传入其中
+        config.connection_class.call.new(self, env).process ##此时将Server直接传入到ActionCable::Connection::Base中进行处理
       end
 
       # Disconnect all the connections identified by `identifiers` on this server or

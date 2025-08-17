@@ -174,7 +174,7 @@ module ActionCable
       # channel declared by the user (so not one of the callbacks like #subscribed).
       def perform_action(data)
         action = extract_action(data)
-
+        ##执行Channel的任务
         if processable_action?(action)
           payload = { channel_class: self.class.name, action: action, data: data }
           ActiveSupport::Notifications.instrument("perform_action.action_cable", payload) do

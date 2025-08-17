@@ -24,7 +24,7 @@ module ActionCable
           min_threads: 1,
           max_threads: max_size,
           max_queue: 0,
-        )
+        ) #创建线程持，默认大小是1-5线程
       end
 
       # Stop processing work: any work that has not already started running will be

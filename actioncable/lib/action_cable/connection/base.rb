@@ -67,7 +67,7 @@ module ActionCable
       def initialize(server, env, coder: ActiveSupport::JSON)
         @server, @env, @coder = server, env, coder
 
-        @worker_pool = server.worker_pool
+        @worker_pool = server.worker_pool #获得线程池
         @logger = new_tagged_logger
 
         @websocket      = ActionCable::Connection::WebSocket.new(env, self, event_loop)
@@ -95,7 +95,7 @@ module ActionCable
       # Decodes WebSocket messages and dispatches them to subscribed channels.
       # WebSocket message transfer encoding is always JSON.
       def receive(websocket_message) # :nodoc:
-        send_async :dispatch_websocket_message, websocket_message
+        send_async :dispatch_websocket_message, websocket_message #处理收到的Websocket数据
       end
 
       def dispatch_websocket_message(websocket_message) # :nodoc:
@@ -129,7 +129,7 @@ module ActionCable
       # Invoke a method on the connection asynchronously through the pool of thread
       # workers.
       def send_async(method, *arguments)
-        worker_pool.async_invoke(self, method, *arguments)
+        worker_pool.async_invoke(self, method, *arguments) #使用线程池进行任务处理
       end
 
       # Return a basic hash of statistics for the connection keyed with `identifier`,
